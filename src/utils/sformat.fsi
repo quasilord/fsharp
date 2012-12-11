@@ -228,7 +228,10 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 #endif
 #endif
           FormatProvider: System.IFormatProvider
+#if NET_CORE
+#else
           BindingFlags: System.Reflection.BindingFlags
+#endif
           PrintWidth : int 
           PrintDepth : int 
           PrintLength : int
@@ -266,6 +269,9 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         /// as any_to_string
         val output_any: writer:TextWriter -> value:'T -> unit
 
+#if NET_CORE
+        val anyToStringForPrintf: options:FormatOptions -> value:'T -> string
+#else
 #if RUNTIME   // FSharp.Core.dll: Most functions aren't needed in FSharp.Core.dll, but we add one entry for printf
         val anyToStringForPrintf: options:FormatOptions -> bindingFlags:System.Reflection.BindingFlags -> value:'T -> string
 #else
@@ -273,6 +279,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         val squash_layout   : options:FormatOptions -> layout:Layout -> Layout
         val output_layout   : options:FormatOptions -> writer:TextWriter -> layout:Layout -> unit
         val layout_as_string: options:FormatOptions -> value:'T -> string
+#endif
 #endif
 
         /// Convert any value to a layout using the given formatting options.  The

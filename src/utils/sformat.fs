@@ -59,6 +59,50 @@ namespace Microsoft.FSharp.Text.StructuredFormat
     open Microsoft.FSharp.Collections
     open Microsoft.FSharp.Primitives.Basics
 
+#if NET_CORE
+    [<AutoOpen>]
+    module internal Utilities =
+
+        type AttributeValue = System.Attribute
+
+        type System.Type with 
+            member x.IsGenericType = x.GetTypeInfo().IsGenericType
+            //member x.FullName = x.GetTypeInfo().FullName
+            member x.GetCustomAttributes(attributeType,inherrit) = x.GetTypeInfo().GetCustomAttributes(attributeType,inherrit) |> Seq.toArray
+            member x.GetInterfaces() = x.GetTypeInfo().ImplementedInterfaces |> Seq.toArray
+(*
+            member x.IsGenericTypeDefinition = x.GetTypeInfo().IsGenericTypeDefinition
+            member x.GetGenericArguments() = x.GetTypeInfo().GenericTypeArguments
+            member x.GetNestedType(nm:string, _bindingFlags:BindingFlags) = x.GetTypeInfo().GetDeclaredNestedType(nm).AsType()
+            member x.GetMethods(_bindingFlags:BindingFlags) = x.GetTypeInfo().DeclaredMethods |> Seq.toArray
+            member x.GetMethods() = x.GetTypeInfo().DeclaredMethods |> Seq.toArray
+            member x.GetFields(_bindingFlags:BindingFlags:BindingFlags) = x.GetTypeInfo().DeclaredFields |> Seq.toArray
+*)
+            member x.GetProperty(propName) = x.GetTypeInfo().GetDeclaredProperty(propName) 
+            member x.GetProperty(propName,_bindingFlags:BindingFlags) = x.GetTypeInfo().GetDeclaredProperty(propName) 
+(*
+            // Note: This is approximate - it works based on the number of arguments
+            member x.GetConstructor(_bindingFlags:BindingFlags,_binder,argTypes:Type[],_arg4) = x.GetTypeInfo().DeclaredConstructors |> Seq.find (fun n -> n.GetParameters().Length = argTypes.Length)
+            member x.GetMethod(methName,_bindingFlags:BindingFlags) = x.GetTypeInfo().GetDeclaredMethod(methName)
+            member x.GetMethod(methName,_bindingFlags:BindingFlags,_binder,_argTypes,_returnType) = x.GetTypeInfo().GetDeclaredMethod(methName)
+            member x.GetProperties(_bindingFlags:BindingFlags) = x.GetTypeInfo().DeclaredProperties |> Seq.toArray
+            member x.BaseType = x.GetTypeInfo().BaseType
+*)
+            member x.GetProperties(_bindingFlags:BindingFlags) = x.GetTypeInfo().DeclaredProperties |> Seq.toArray
+            member x.GetProperties() = x.GetTypeInfo().DeclaredProperties |> Seq.toArray
+
+        type System.Reflection.PropertyInfo with 
+            member x.GetValue(obj,_bindingFlags,_arg3,_arg4,_arg5) = x.GetValue(obj)
+
+        type System.Reflection.MethodInfo with 
+            member x.Invoke(obj,_bindingFlags,_arg3,args,_arg5) = x.Invoke(obj,args)
+            member x.GetCustomAttributesData() = x.CustomAttributes
+
+        type System.Reflection.ConstructorInfo with 
+            member x.Invoke(_bindingFlags,_arg3,args,_arg5) = x.Invoke(args)
+    #endif
+
+
     /// A joint, between 2 layouts, is either:
     ///  - unbreakable, or
     ///  - breakable, and if broken the second block has a given indentation.
@@ -231,7 +275,10 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 #endif
 #endif
           FormatProvider: System.IFormatProvider;
+#if NET_CORE
+#else
           BindingFlags: System.Reflection.BindingFlags
+#endif
           PrintWidth : int; 
           PrintDepth : int; 
           PrintLength : int;
@@ -248,7 +295,10 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 #endif
 #endif
               AttributeProcessor= (fun _ _ _ -> ());
+#if NET_CORE
+#else
               BindingFlags = System.Reflection.BindingFlags.Public;
+#endif
               FloatingPointFormat = "g10";
               PrintWidth = 80 ; 
               PrintDepth = 100 ; 
@@ -303,16 +353,26 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             let getTypeInfoOfType (bindingFlags:BindingFlags) (typ:Type) = 
                 if FSharpType.IsTuple(typ)  then TypeInfo.TupleType (FSharpType.GetTupleElements(typ) |> Array.toList)
                 elif FSharpType.IsFunction(typ) then let ty1,ty2 = FSharpType.GetFunctionElements typ in  TypeInfo.FunctionType( ty1,ty2)
+#if NET_CORE
+                elif FSharpType.IsUnion(typ) then 
+                    let cases = FSharpType.GetUnionCases(typ) 
+#else
                 elif FSharpType.IsUnion(typ,bindingFlags) then 
                     let cases = FSharpType.GetUnionCases(typ,bindingFlags) 
+#endif
                     match cases with 
                     | [| |] -> TypeInfo.ObjectType(typ) 
                     | _ -> 
                         TypeInfo.SumType(cases |> Array.toList |> List.map (fun case -> 
                             let flds = case.GetFields()
                             case.Name,recdDescOfProps(flds)))
+#if NET_CORE
+                elif FSharpType.IsRecord(typ) then 
+                    let flds = FSharpType.GetRecordFields(typ) 
+#else
                 elif FSharpType.IsRecord(typ,bindingFlags) then 
                     let flds = FSharpType.GetRecordFields(typ,bindingFlags) 
+#endif
                     TypeInfo.RecordType(recdDescOfProps(flds))
                 else
                     TypeInfo.ObjectType(typ)
@@ -356,20 +416,35 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                 // the type are the actual fields of the type.  Again,
                 // we should be reading attributes here that indicate the
                 // true structure of the type, e.g. the order of the fields.   
+#if NET_CORE
+                elif FSharpType.IsUnion(reprty) then 
+                    let tag,vals = FSharpValue.GetUnionFields (obj,reprty) 
+#else
                 elif FSharpType.IsUnion(reprty,bindingFlags) then 
                     let tag,vals = FSharpValue.GetUnionFields (obj,reprty,bindingFlags) 
+#endif
                     let props = tag.GetFields()
                     let pvals = (props,vals) ||> Array.map2 (fun prop v -> prop.Name,v)
                     ConstructorValue(tag.Name, Array.toList pvals)
 
+#if NET_CORE
+                elif FSharpType.IsExceptionRepresentation(reprty) then 
+                    let props = FSharpType.GetExceptionFields(reprty) 
+#else
                 elif FSharpType.IsExceptionRepresentation(reprty,bindingFlags) then 
                     let props = FSharpType.GetExceptionFields(reprty,bindingFlags) 
+#endif
                     let vals = FSharpValue.GetExceptionFields(obj,bindingFlags) 
                     let pvals = (props,vals) ||> Array.map2 (fun prop v -> prop.Name,v)
                     ExceptionValue(reprty, pvals |> Array.toList)
 
+#if NET_CORE
+                elif FSharpType.IsRecord(reprty) then 
+                    let props = FSharpType.GetRecordFields(reprty) 
+#else
                 elif FSharpType.IsRecord(reprty,bindingFlags) then 
                     let props = FSharpType.GetRecordFields(reprty,bindingFlags) 
+#endif
                     RecordValue(props |> Array.map (fun prop -> prop.Name, prop.GetValue(obj,null)) |> Array.toList)
                 else
                     ObjectValue(obj)
@@ -403,15 +478,18 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         let string_of_int (i:int) = i.ToString()
 
         let typeUsesSystemObjectToString (typ:System.Type) =
+            try
 #if FX_ATLEAST_PORTABLE
-            try let methInfo = typ.GetMethod("ToString",[| |])
-                methInfo.DeclaringType = typeof<System.Object>
-            with e -> false
+                let methInfo = typ.GetMethod("ToString",[| |])
 #else        
-            try let methInfo = typ.GetMethod("ToString",BindingFlags.Public ||| BindingFlags.Instance,null,[| |],null)
+#if NET_CORE
+                let methInfo = typ.GetTypeInfo().DeclaredMethods |> Seq.find (fun m -> m.Name = "ToString" && m.GetParameters().Length = 0)
+#else
+                let methInfo = typ.GetMethod("ToString",BindingFlags.Public ||| BindingFlags.Instance,null,[| |],null)
+#endif
+#endif
                 methInfo.DeclaringType = typeof<System.Object>
             with e -> false
-#endif
         /// If "str" ends with "ending" then remove it from "str", otherwise no change.
         let trimEnding (ending:string) (str:string) =
 #if FX_NO_CULTURE_INFO_ARGS
@@ -719,7 +797,12 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 #if FX_NO_CULTURE_INFO_ARGS
             ty.InvokeMember(name, (BindingFlags.GetProperty ||| BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic), null, obj, [| |])
 #else
+#if NET_CORE
+            let bindingFlags = BindingFlags.GetProperty ||| BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic
+            ty.GetProperty(name, bindingFlags).GetValue(obj, [| |])
+#else
             ty.InvokeMember(name, (BindingFlags.GetProperty ||| BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic), null, obj, [| |],CultureInfo.InvariantCulture)
+#endif
 #endif
 #endif
         let formatChar isChar c = 
@@ -1158,7 +1241,12 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         let any_to_string x = layout_as_string FormatOptions.Default x
 
 #if RUNTIME
+#if NET_CORE
+        let internal anyToStringForPrintf opts x = 
+            let bindingFlags = BindingFlags.Public
+#else
         let internal anyToStringForPrintf opts (bindingFlags:BindingFlags) x = 
+#endif
             x |> anyL ShowAll bindingFlags opts |> layout_to_string opts
 #endif
 

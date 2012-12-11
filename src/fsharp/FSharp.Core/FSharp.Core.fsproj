@@ -11,6 +11,7 @@
 -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
+    <TargetFramework Condition=" '$(TargetFramework)'==''">netcore45</TargetFramework>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
     <ProductVersion>10.0.0</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
@@ -135,10 +136,10 @@
     <Compile Include="event.fs">
       <Link>event.fs</Link>
     </Compile>
-    <Compile Include="..\..\utils\sformat.fsi" Condition="'$(TargetFramework)' != 'netcore45'">
+    <Compile Include="..\..\utils\sformat.fsi">
       <Link>sformat.fsi</Link>
     </Compile>
-    <Compile Include="..\..\utils\sformat.fs" Condition="'$(TargetFramework)' != 'netcore45'">
+    <Compile Include="..\..\utils\sformat.fs">
       <Link>sformat.fs</Link>
     </Compile>
     <Compile Include="printf.fsi" Condition="'$(TargetFramework)' != 'netcore45'">
@@ -222,6 +223,7 @@
     <Reference Include="System.Runtime" Condition="'$(TargetFramework)' == 'netcore45'" />
     <Reference Include="System.Runtime.Extensions" Condition="'$(TargetFramework)' == 'netcore45'" />
     <Reference Include="System.Resources.ResourceManager" Condition="'$(TargetFramework)' == 'netcore45'" />
+    <Reference Include="System.Reflection.Primitives" Condition="'$(TargetFramework)' == 'netcore45'" />
     <Reference Include="System.Reflection" Condition="'$(TargetFramework)' == 'netcore45'" />
     <Reference Include="System.Reflection.Extensions" Condition="'$(TargetFramework)' == 'netcore45'" />
     <Reference Include="System.Globalization" Condition="'$(TargetFramework)' == 'netcore45'" />

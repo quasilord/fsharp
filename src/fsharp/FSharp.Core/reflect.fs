@@ -23,36 +23,36 @@ open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Primitives.Basics
 
+#if NET_CORE
+type internal AttributeValue = System.Attribute
+
+type internal BindingFlags =
+    | Default = 0
+    | IgnoreCase = 1
+    | DeclaredOnly = 2
+    | Instance = 4
+    | Static = 8
+    | Public = 16
+    | NonPublic = 32
+    | FlattenHierarchy = 64
+    | InvokeMethod = 256
+    | CreateInstance = 512
+    | GetField = 1024
+    | SetField = 2048
+    | GetProperty = 4096
+    | SetProperty = 8192
+    | PutDispProperty = 16384
+    | PutRefDispProperty = 32768
+    | ExactBinding = 65536
+    | SuppressChangeType = 131072
+    | OptionalParamBinding = 262144
+    | IgnoreReturn = 16777216
+#endif
+
 [<AutoOpen>]
 module internal Utilities =
 
 #if NET_CORE
-    type AttributeValue = System.Attribute
-
-    type BindingFlags =
-        | Default = 0
-        | IgnoreCase = 1
-        | DeclaredOnly = 2
-        | Instance = 4
-        | Static = 8
-        | Public = 16
-        | NonPublic = 32
-        | FlattenHierarchy = 64
-        | InvokeMethod = 256
-        | CreateInstance = 512
-        | GetField = 1024
-        | SetField = 2048
-        | GetProperty = 4096
-        | SetProperty = 8192
-        | PutDispProperty = 16384
-        | PutRefDispProperty = 32768
-        | ExactBinding = 65536
-        | SuppressChangeType = 131072
-        | OptionalParamBinding = 262144
-        | IgnoreReturn = 16777216
-#else
-    type AttributeValue = obj
-#endif
     type System.Type with 
         member x.IsGenericType = x.GetTypeInfo().IsGenericType
         member x.IsGenericTypeDefinition = x.GetTypeInfo().IsGenericTypeDefinition
@@ -80,6 +80,9 @@ module internal Utilities =
 
     type System.Reflection.ConstructorInfo with 
         member x.Invoke(_bindingFlags,_arg3,args,_arg5) = x.Invoke(args)
+#else
+    type AttributeValue = obj
+#endif
 
 module internal Impl =
 
@@ -812,12 +815,12 @@ type FSharpType =
         Impl.fieldPropsOfRecordType (exceptionType,bindingFlags) 
 
 #if NET_CORE
-    static member IsRecord(typ) = FSharpType.IsRecord(typ,BindingFlags.Public)
-    static member IsUnion(typ) = FSharpType.IsUnion(typ,BindingFlags.Public)
-    static member GetRecordFields(recordType) = FSharpType.GetRecordFields(recordType,BindingFlags.Public)
-    static member GetUnionCases(unionType) = FSharpType.GetUnionCases(unionType,BindingFlags.Public)
-    static member IsExceptionRepresentation(exceptionType) = FSharpType.IsExceptionRepresentation(exceptionType,BindingFlags.Public)
-    static member GetExceptionFields(exceptionType) = FSharpType.GetExceptionFields(exceptionType,BindingFlags.Public)
+    static member IsRecord(typ) = FSharpType.IsRecord(typ,BindingFlags.Public ||| BindingFlags.NonPublic)
+    static member IsUnion(typ) = FSharpType.IsUnion(typ,BindingFlags.Public ||| BindingFlags.NonPublic)
+    static member GetRecordFields(recordType) = FSharpType.GetRecordFields(recordType,BindingFlags.Public ||| BindingFlags.NonPublic)
+    static member GetUnionCases(unionType) = FSharpType.GetUnionCases(unionType,BindingFlags.Public ||| BindingFlags.NonPublic)
+    static member IsExceptionRepresentation(exceptionType) = FSharpType.IsExceptionRepresentation(exceptionType,BindingFlags.Public ||| BindingFlags.NonPublic)
+    static member GetExceptionFields(exceptionType) = FSharpType.GetExceptionFields(exceptionType,BindingFlags.Public ||| BindingFlags.NonPublic)
 #endif
 
 type DynamicFunction<'T1,'T2>() =
@@ -977,17 +980,17 @@ type FSharpValue =
 
 
 #if NET_CORE
-    static member MakeRecord(recordType,args) = FSharpValue.MakeRecord(recordType,args,BindingFlags.Public)
-    static member MakeUnion(unionCase,args) = FSharpValue.MakeUnion(unionCase,args,BindingFlags.Public)
-    static member GetRecordFields(record:obj) = FSharpValue.GetRecordFields(record,BindingFlags.Public)
-    static member PreComputeRecordReader(recordType) = FSharpValue.PreComputeRecordReader(recordType,BindingFlags.Public)
-    static member PreComputeRecordConstructor(recordType) = FSharpValue.PreComputeRecordConstructor(recordType,BindingFlags.Public)
-    static member PreComputeRecordConstructorInfo(recordType) = FSharpValue.PreComputeRecordConstructorInfo(recordType,BindingFlags.Public)
-    static member PreComputeUnionConstructor(unionCase) = FSharpValue.PreComputeUnionConstructor(unionCase,BindingFlags.Public)
-    static member PreComputeUnionConstructorInfo(unionCase) = FSharpValue.PreComputeUnionConstructorInfo(unionCase,BindingFlags.Public)
-    static member GetUnionFields(obj:obj,unionType) = FSharpValue.GetUnionFields(obj,unionType,BindingFlags.Public)
-    static member PreComputeUnionTagReader(unionType: Type) = FSharpValue.PreComputeUnionTagReader(unionType,BindingFlags.Public)
-    static member PreComputeUnionTagMemberInfo(unionType) = FSharpValue.PreComputeUnionTagMemberInfo(unionType,BindingFlags.Public)
-    static member PreComputeUnionReader(unionCase) = FSharpValue.PreComputeUnionReader(unionCase,BindingFlags.Public)
-    static member GetExceptionFields(exn:obj) = FSharpValue.GetExceptionFields(exn,BindingFlags.Public)
+    static member MakeRecord(recordType,args) = FSharpValue.MakeRecord(recordType,args,BindingFlags.Public ||| BindingFlags.NonPublic)
+    static member MakeUnion(unionCase,args) = FSharpValue.MakeUnion(unionCase,args,BindingFlags.Public ||| BindingFlags.NonPublic)
+    static member GetRecordFields(record:obj) = FSharpValue.GetRecordFields(record,BindingFlags.Public ||| BindingFlags.NonPublic)
+    static member PreComputeRecordReader(recordType) = FSharpValue.PreComputeRecordReader(recordType,BindingFlags.Public ||| BindingFlags.NonPublic)
+    static member PreComputeRecordConstructor(recordType) = FSharpValue.PreComputeRecordConstructor(recordType,BindingFlags.Public ||| BindingFlags.NonPublic)
+    static member PreComputeRecordConstructorInfo(recordType) = FSharpValue.PreComputeRecordConstructorInfo(recordType,BindingFlags.Public ||| BindingFlags.NonPublic)
+    static member PreComputeUnionConstructor(unionCase) = FSharpValue.PreComputeUnionConstructor(unionCase,BindingFlags.Public ||| BindingFlags.NonPublic)
+    static member PreComputeUnionConstructorInfo(unionCase) = FSharpValue.PreComputeUnionConstructorInfo(unionCase,BindingFlags.Public ||| BindingFlags.NonPublic)
+    static member GetUnionFields(obj:obj,unionType) = FSharpValue.GetUnionFields(obj,unionType,BindingFlags.Public ||| BindingFlags.NonPublic)
+    static member PreComputeUnionTagReader(unionType: Type) = FSharpValue.PreComputeUnionTagReader(unionType,BindingFlags.Public ||| BindingFlags.NonPublic)
+    static member PreComputeUnionTagMemberInfo(unionType) = FSharpValue.PreComputeUnionTagMemberInfo(unionType,BindingFlags.Public ||| BindingFlags.NonPublic)
+    static member PreComputeUnionReader(unionCase) = FSharpValue.PreComputeUnionReader(unionCase,BindingFlags.Public ||| BindingFlags.NonPublic)
+    static member GetExceptionFields(exn:obj) = FSharpValue.GetExceptionFields(exn,BindingFlags.Public ||| BindingFlags.NonPublic)
 #endif
