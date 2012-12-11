@@ -208,7 +208,11 @@ module PrintfImpl =
 #if FX_NO_CULTURE_INFO_ARGS
         fTy.InvokeMember("Invoke",instanceInvokeFlags,(null:Binder),f,[| x |]) 
 #else
+#if NET_CORE
+        fTy.GetRuntimeMethod("Invoke",[| fTy |]).Invoke(f,[| x |]) 
+#else
         fTy.InvokeMember("Invoke",instanceInvokeFlags,(null:Binder),f,[| x |],CultureInfo.InvariantCulture(*FxCop:1304*)) 
+#endif
 #endif
 #endif
 

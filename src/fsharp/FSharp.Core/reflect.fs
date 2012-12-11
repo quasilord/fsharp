@@ -47,6 +47,8 @@ type internal BindingFlags =
     | SuppressChangeType = 131072
     | OptionalParamBinding = 262144
     | IgnoreReturn = 16777216
+#else
+type internal AttributeValue = obj
 #endif
 
 [<AutoOpen>]
@@ -69,6 +71,7 @@ module internal Utilities =
         member x.GetMethod(methName,_bindingFlags:BindingFlags,_binder,_argTypes,_returnType) = x.GetTypeInfo().GetDeclaredMethod(methName)
         member x.GetProperties(_bindingFlags:BindingFlags) = x.GetTypeInfo().DeclaredProperties |> Seq.toArray
         member x.GetProperties() = x.GetTypeInfo().DeclaredProperties |> Seq.toArray
+        member x.GetInterfaces() = x.GetTypeInfo().ImplementedInterfaces |> Seq.toArray
         member x.BaseType = x.GetTypeInfo().BaseType
 
     type System.Reflection.PropertyInfo with 
@@ -80,8 +83,6 @@ module internal Utilities =
 
     type System.Reflection.ConstructorInfo with 
         member x.Invoke(_bindingFlags,_arg3,args,_arg5) = x.Invoke(args)
-#else
-    type AttributeValue = obj
 #endif
 
 module internal Impl =

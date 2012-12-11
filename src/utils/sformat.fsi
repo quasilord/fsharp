@@ -43,7 +43,9 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 
     open System
     open System.IO
+    open System.Reflection
     open Microsoft.FSharp.Core
+    open Microsoft.FSharp.Reflection
     open Microsoft.FSharp.Collections
     open Microsoft.FSharp.Primitives.Basics
 
@@ -269,17 +271,13 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         /// as any_to_string
         val output_any: writer:TextWriter -> value:'T -> unit
 
-#if NET_CORE
-        val anyToStringForPrintf: options:FormatOptions -> value:'T -> string
-#else
 #if RUNTIME   // FSharp.Core.dll: Most functions aren't needed in FSharp.Core.dll, but we add one entry for printf
-        val anyToStringForPrintf: options:FormatOptions -> bindingFlags:System.Reflection.BindingFlags -> value:'T -> string
+        val anyToStringForPrintf: options:FormatOptions -> bindingFlags:BindingFlags -> value:'T -> string
 #else
         val any_to_layout   : options:FormatOptions -> value:'T -> Layout
         val squash_layout   : options:FormatOptions -> layout:Layout -> Layout
         val output_layout   : options:FormatOptions -> writer:TextWriter -> layout:Layout -> unit
         val layout_as_string: options:FormatOptions -> value:'T -> string
-#endif
 #endif
 
         /// Convert any value to a layout using the given formatting options.  The

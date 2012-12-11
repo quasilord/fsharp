@@ -59,49 +59,6 @@ namespace Microsoft.FSharp.Text.StructuredFormat
     open Microsoft.FSharp.Collections
     open Microsoft.FSharp.Primitives.Basics
 
-#if NET_CORE
-    [<AutoOpen>]
-    module internal Utilities =
-
-        type AttributeValue = System.Attribute
-
-        type System.Type with 
-            member x.IsGenericType = x.GetTypeInfo().IsGenericType
-            //member x.FullName = x.GetTypeInfo().FullName
-            member x.GetCustomAttributes(attributeType,inherrit) = x.GetTypeInfo().GetCustomAttributes(attributeType,inherrit) |> Seq.toArray
-            member x.GetInterfaces() = x.GetTypeInfo().ImplementedInterfaces |> Seq.toArray
-(*
-            member x.IsGenericTypeDefinition = x.GetTypeInfo().IsGenericTypeDefinition
-            member x.GetGenericArguments() = x.GetTypeInfo().GenericTypeArguments
-            member x.GetNestedType(nm:string, _bindingFlags:BindingFlags) = x.GetTypeInfo().GetDeclaredNestedType(nm).AsType()
-            member x.GetMethods(_bindingFlags:BindingFlags) = x.GetTypeInfo().DeclaredMethods |> Seq.toArray
-            member x.GetMethods() = x.GetTypeInfo().DeclaredMethods |> Seq.toArray
-            member x.GetFields(_bindingFlags:BindingFlags:BindingFlags) = x.GetTypeInfo().DeclaredFields |> Seq.toArray
-*)
-            member x.GetProperty(propName) = x.GetTypeInfo().GetDeclaredProperty(propName) 
-            member x.GetProperty(propName,_bindingFlags:BindingFlags) = x.GetTypeInfo().GetDeclaredProperty(propName) 
-(*
-            // Note: This is approximate - it works based on the number of arguments
-            member x.GetConstructor(_bindingFlags:BindingFlags,_binder,argTypes:Type[],_arg4) = x.GetTypeInfo().DeclaredConstructors |> Seq.find (fun n -> n.GetParameters().Length = argTypes.Length)
-            member x.GetMethod(methName,_bindingFlags:BindingFlags) = x.GetTypeInfo().GetDeclaredMethod(methName)
-            member x.GetMethod(methName,_bindingFlags:BindingFlags,_binder,_argTypes,_returnType) = x.GetTypeInfo().GetDeclaredMethod(methName)
-            member x.GetProperties(_bindingFlags:BindingFlags) = x.GetTypeInfo().DeclaredProperties |> Seq.toArray
-            member x.BaseType = x.GetTypeInfo().BaseType
-*)
-            member x.GetProperties(_bindingFlags:BindingFlags) = x.GetTypeInfo().DeclaredProperties |> Seq.toArray
-            member x.GetProperties() = x.GetTypeInfo().DeclaredProperties |> Seq.toArray
-
-        type System.Reflection.PropertyInfo with 
-            member x.GetValue(obj,_bindingFlags,_arg3,_arg4,_arg5) = x.GetValue(obj)
-
-        type System.Reflection.MethodInfo with 
-            member x.Invoke(obj,_bindingFlags,_arg3,args,_arg5) = x.Invoke(obj,args)
-            member x.GetCustomAttributesData() = x.CustomAttributes
-
-        type System.Reflection.ConstructorInfo with 
-            member x.Invoke(_bindingFlags,_arg3,args,_arg5) = x.Invoke(args)
-    #endif
-
 
     /// A joint, between 2 layouts, is either:
     ///  - unbreakable, or
@@ -1241,12 +1198,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         let any_to_string x = layout_as_string FormatOptions.Default x
 
 #if RUNTIME
-#if NET_CORE
-        let internal anyToStringForPrintf opts x = 
-            let bindingFlags = BindingFlags.Public
-#else
         let internal anyToStringForPrintf opts (bindingFlags:BindingFlags) x = 
-#endif
             x |> anyL ShowAll bindingFlags opts |> layout_to_string opts
 #endif
 

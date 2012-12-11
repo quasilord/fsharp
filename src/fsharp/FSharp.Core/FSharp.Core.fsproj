@@ -142,10 +142,10 @@
     <Compile Include="..\..\utils\sformat.fs">
       <Link>sformat.fs</Link>
     </Compile>
-    <Compile Include="printf.fsi" Condition="'$(TargetFramework)' != 'netcore45'">
+    <Compile Include="printf.fsi">
       <Link>printf.fsi</Link>
     </Compile>
-    <Compile Include="printf.fs" Condition="'$(TargetFramework)' != 'netcore45'"> 
+    <Compile Include="printf.fs"> 
       <Link>printf.fs</Link>
     </Compile>
     <Compile Include="quotations.fsi" Condition="'$(TargetFramework)' != 'netcore45'">
