@@ -74,6 +74,7 @@ namespace Microsoft.FSharp.Core
     open System.Diagnostics
     open System.Globalization
     open System.Text
+    open System.Reflection
 
 
     //-------------------------------------------------------------------------
@@ -447,7 +448,12 @@ namespace Microsoft.FSharp.Core
 
         let inline typedefof<'T> = 
             let ty = typeof<'T> 
+#if NET_CORE
+            let tyi = ty.GetTypeInfo() 
+            if tyi.IsGenericType then ty.GetGenericTypeDefinition() else ty
+#else 
             if ty.IsGenericType then ty.GetGenericTypeDefinition() else ty
+#endif
         
         let inline sizeof<'T>  =
             (# "sizeof !0" type('T) : int #) 
@@ -626,6 +632,8 @@ namespace Microsoft.FSharp.Core
     open System.Diagnostics
     open System.Globalization
     open System.Text
+    open System.Linq
+    open System.Reflection
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.BasicInlinedOperations
 
@@ -702,23 +710,50 @@ namespace Microsoft.FSharp.Core
                // Compute an on-demand per-instantiation static field
                static let info = 
                    let ty = typeof<'T>
+#if NET_CORE
+                   let tyi = ty.GetTypeInfo()
+                   if tyi.IsValueType 
+#else
                    if ty.IsValueType 
+#endif
                    then TypeNullnessSemantics_NullNever else
+#if NET_CORE
+                   let mappingAttrs = tyi.GetCustomAttributes(typeof<CompilationMappingAttribute>,false)
+                   if mappingAttrs.Count() = 0 
+#else
                    let mappingAttrs = ty.GetCustomAttributes(typeof<CompilationMappingAttribute>,false)
                    if mappingAttrs.Length = 0 
+#endif
                    then TypeNullnessSemantics_NullIsExtraValue
                    elif ty.Equals(typeof<unit>) then 
                        TypeNullnessSemantics_NullTrueValue
+#if NET_CORE
+                   elif typeof<System.Delegate>.GetTypeInfo().IsAssignableFrom(tyi) then 
+#else
                    elif typeof<System.Delegate>.IsAssignableFrom(ty) then 
+#endif
                        TypeNullnessSemantics_NullIsExtraValue
+#if NET_CORE
+                   elif tyi.GetCustomAttributes(typeof<AllowNullLiteralAttribute>,false).Count() > 0 then
+#else
                    elif ty.GetCustomAttributes(typeof<AllowNullLiteralAttribute>,false).Length > 0 then
+#endif
                        TypeNullnessSemantics_NullIsExtraValue
                    else
+#if NET_CORE
+                       let reprAttrs = tyi.GetCustomAttributes(typeof<CompilationRepresentationAttribute>,false)
+                       if reprAttrs.Count() = 0 then 
+#else
                        let reprAttrs = ty.GetCustomAttributes(typeof<CompilationRepresentationAttribute>,false)
                        if reprAttrs.Length = 0 then 
+#endif
                            TypeNullnessSemantics_NullNotLiked 
                        else
+#if NET_CORE
+                           let reprAttr = reprAttrs.First()
+#else
                            let reprAttr = get reprAttrs 0
+#endif
                            let reprAttr = (# "unbox.any !0" type (CompilationRepresentationAttribute) reprAttr : CompilationRepresentationAttribute #)
                            if (# "and" reprAttr.Flags CompilationRepresentationFlags_PermitNull : int #) = 0
                            then TypeNullnessSemantics_NullNotLiked
@@ -2288,7 +2323,12 @@ namespace Microsoft.FSharp.Core
             let sign = getSign32 s &p l 
             let specifier = get0OXB s &p l 
             if p >= l then formatError() else
-            match Char.ToLower(specifier,CultureInfo.InvariantCulture(*FxCop:1304*)) with 
+#if NET_CORE
+            let char = Char.ToLowerInvariant(specifier)
+#else
+            let char = Char.ToLower(specifier,CultureInfo.InvariantCulture(*FxCop:1304*))
+#endif
+            match char  with 
             | 'x' -> sign * (int32OfUInt32 (Convert.ToUInt32(UInt64.Parse(s.Substring(p), NumberStyles.AllowHexSpecifier,CultureInfo.InvariantCulture))))
             | 'b' -> sign * (int32OfUInt32 (Convert.ToUInt32(parseBinaryUInt64 s p l)))
             | 'o' -> sign * (int32OfUInt32 (Convert.ToUInt32(parseOctalUInt64 s p l)))
@@ -2303,7 +2343,12 @@ namespace Microsoft.FSharp.Core
             let sign = getSign64 s &p l 
             let specifier = get0OXB s &p l 
             if p >= l then formatError() else
-            match Char.ToLower(specifier,CultureInfo.InvariantCulture(*FxCop:1304*)) with 
+#if NET_CORE
+            let char = Char.ToLowerInvariant(specifier)
+#else
+            let char = Char.ToLower(specifier,CultureInfo.InvariantCulture(*FxCop:1304*))
+#endif
+            match char  with 
             | 'x' -> sign *. Int64.Parse(s.Substring(p), NumberStyles.AllowHexSpecifier,CultureInfo.InvariantCulture)
             | 'b' -> sign *. (int64OfUInt64 (parseBinaryUInt64 s p l))
             | 'o' -> sign *. (int64OfUInt64 (parseOctalUInt64 s p l))
@@ -2343,7 +2388,11 @@ namespace Microsoft.FSharp.Core
                 elif aty.Equals(typeof<float>)      then unboxPrim<'T> (box 0.0)
                 elif aty.Equals(typeof<float32>)    then unboxPrim<'T> (box 0.0f)
                 else 
+#if NET_CORE
+                   let pinfo = aty.GetTypeInfo().GetDeclaredProperty("Zero")
+#else
                    let pinfo = aty.GetProperty("Zero")
+#endif
                    unboxPrim<'T> (pinfo.GetValue(null,null))
             static member Result : 'T = result
                    
@@ -2367,7 +2416,11 @@ namespace Microsoft.FSharp.Core
                 elif aty.Equals(typeof<float>)      then unboxPrim<'T> (box 1.0)
                 elif aty.Equals(typeof<float32>)    then unboxPrim<'T> (box 1.0f)
                 else 
+#if NET_CORE
+                   let pinfo = aty.GetTypeInfo().GetDeclaredProperty("One")
+#else
                    let pinfo = aty.GetProperty("One")
+#endif
                    unboxPrim<'T> (pinfo.GetValue(null,null))
 
             static member Result : 'T = result
@@ -2425,7 +2478,13 @@ namespace Microsoft.FSharp.Core
                 elif aty.Equals(typeof<float>)      then unboxPrim<_> (box (fun (x:float) (n:int) -> (# "div" x ((# "conv.r8" n  : float #)) : float #)))
                 elif aty.Equals(typeof<float32>)    then unboxPrim<_> (box (fun (x:float32) (n:int) -> (# "div" x ((# "conv.r4" n  : float32 #)) : float32 #)))
                 else 
-                    match aty.GetMethod("DivideByInt",[| aty; typeof<int> |]) with 
+#if NET_CORE
+                    // TODO verify we get the right method
+                    let meth = aty.GetTypeInfo().GetDeclaredMethod("DivideByInt")
+#else
+                    let meth = aty.GetMethod("DivideByInt",[| aty; typeof<int> |])
+#endif
+                    match meth with 
                     | null -> raise (NotSupportedException (SR.GetString(SR.dyInvDivByIntCoerce)))
                     | m -> (fun x n -> unboxPrim<_> (m.Invoke(null,[| box x; box n |])))
 
@@ -2450,8 +2509,13 @@ namespace Microsoft.FSharp.Core
                 let bty = typeof<'U>
                 let cty = typeof<'V> 
                 let dyn() = 
+#if NET_CORE
+                    let ameth = aty.GetTypeInfo().GetDeclaredMethod("op_Addition")
+                    let bmeth = if aty.Equals(bty) then null else bty.GetTypeInfo().GetDeclaredMethod("op_Addition")
+#else
                     let ameth = aty.GetMethod("op_Addition",[| aty; bty |])
                     let bmeth = if aty.Equals(bty) then null else bty.GetMethod("op_Addition",[| aty; bty |])
+#endif
                     match ameth,bmeth  with 
                     | null, null -> raise (NotSupportedException (SR.GetString(SR.dyInvOpAddCoerce)))
                     | m,null | null,m -> (fun x y -> unboxPrim<_> (m.Invoke(null,[| box x; box y |])))
@@ -2487,8 +2551,13 @@ namespace Microsoft.FSharp.Core
                 let bty = typeof<'U>
                 let cty = typeof<'V> 
                 let dyn() = 
+#if NET_CORE
+                    let ameth = aty.GetTypeInfo().GetDeclaredMethod("op_Addition")
+                    let bmeth = if aty.Equals(bty) then null else bty.GetTypeInfo().GetDeclaredMethod("op_Addition")
+#else
                     let ameth = aty.GetMethod("op_Addition",[| aty; bty |])
                     let bmeth = if aty.Equals(bty) then null else bty.GetMethod("op_Addition",[| aty; bty |])
+#endif
                     match ameth,bmeth  with 
                     | null, null -> raise (NotSupportedException (SR.GetString(SR.dyInvOpAddCoerce)))
                     | m,null | null,m -> (fun x y -> unboxPrim<_> (m.Invoke(null,[| box x; box y |])))
@@ -2527,8 +2596,13 @@ namespace Microsoft.FSharp.Core
                 let bty = typeof<'U>
                 let cty = typeof<'V> 
                 let dyn() = 
+#if NET_CORE
+                    let ameth = aty.GetTypeInfo().GetDeclaredMethod("op_Multiply")
+                    let bmeth = if aty.Equals(bty) then null else bty.GetTypeInfo().GetDeclaredMethod("op_Multiply")
+#else
                     let ameth = aty.GetMethod("op_Multiply",[| aty; bty |])
                     let bmeth = if aty.Equals(bty) then null else bty.GetMethod("op_Multiply",[| aty; bty |])
+#endif
                     match ameth,bmeth  with 
                     | null, null -> raise (NotSupportedException (SR.GetString(SR.dyInvOpMultCoerce)))
                     | m,null | null,m -> (fun x y -> unboxPrim<_> (m.Invoke(null,[| box x; box y |])))
@@ -2564,8 +2638,13 @@ namespace Microsoft.FSharp.Core
                 let bty = typeof<'U>
                 let cty = typeof<'V> 
                 let dyn() = 
+#if NET_CORE
+                    let ameth = aty.GetTypeInfo().GetDeclaredMethod("op_Multiply")
+                    let bmeth = if aty.Equals(bty) then null else bty.GetTypeInfo().GetDeclaredMethod("op_Multiply")
+#else
                     let ameth = aty.GetMethod("op_Multiply",[| aty; bty |])
                     let bmeth = if aty.Equals(bty) then null else bty.GetMethod("op_Multiply",[| aty; bty |])
+#endif
                     match ameth,bmeth  with 
                     | null, null -> raise (NotSupportedException (SR.GetString(SR.dyInvOpMultCoerce)))
                     | m,null | null,m -> (fun x y -> unboxPrim<_> (m.Invoke(null,[| box x; box y |])))
@@ -2628,6 +2707,7 @@ namespace System
     open System.Diagnostics
     open System.Globalization
     open System.Text
+    open System.Reflection
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.BasicInlinedOperations
     open Microsoft.FSharp.Core.LanguagePrimitives
@@ -3432,7 +3512,7 @@ namespace Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicFunctions
     open Microsoft.FSharp.Core.BasicInlinedOperations
     open Microsoft.FSharp.Collections
-
+    open System.Reflection
 
 
     [<CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1046:DoNotOverloadOperatorEqualsOnReferenceTypes")>]
@@ -5136,13 +5216,21 @@ namespace Microsoft.FSharp.Core
             [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
             let UnaryDynamicImpl nm : ('T -> 'U) =
                  let aty = typeof<'T>
+#if NET_CORE
+                 let minfo = aty.GetTypeInfo().GetDeclaredMethod(nm)
+#else
                  let minfo = aty.GetMethod(nm, [| aty |])
+#endif
                  (fun x -> unboxPrim<_>(minfo.Invoke(null,[| box x|])))
 
             let BinaryDynamicImpl nm : ('T -> 'U -> 'V) =
                  let aty = typeof<'T>
+#if NET_CORE
+                 let minfo = aty.GetTypeInfo().GetDeclaredMethod(nm)
+#else
                  let bty = typeof<'U>
                  let minfo = aty.GetMethod(nm,[| aty;bty |])
+#endif
                  (fun x y -> unboxPrim<_>(minfo.Invoke(null,[| box x; box y|])))
 
             [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]                

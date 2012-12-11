@@ -23,11 +23,11 @@
     <VersionFile Condition="'$(TargetFramework)' == 'net20'">$(FSharpSourcesRoot)\source-build-version-2.3.0.0</VersionFile>
     <VersionFile Condition="'$(TargetFramework)' == 'net40'">$(FSharpSourcesRoot)\source-build-version-4.3.0.0</VersionFile>
     <VersionFile Condition="'$(TargetFramework)' == 'portable-net4+sl4+wp71+win8'">$(FSharpSourcesRoot)\source-build-version-2.3.5.0</VersionFile>
-<!--
+    <VersionFile Condition="'$(TargetFramework)' == 'netcore45'">$(FSharpSourcesRoot)\source-build-version-2.3.7.0</VersionFile>
+    <!--
 Some other NuGET monikers to support in the future, see http://docs.nuget.org/docs/creating-packages/creating-and-publishing-a-package#Package_Conventions
 
-    <VersionFile Condition="'$(TargetFramework)' == 'portable-windows8+net45'">$(FSharpSourcesRoot)\source-build-version-2.3.6.0</VersionFile>
-    <VersionFile Condition="'$(TargetFramework)' == 'windows8'">$(FSharpSourcesRoot)\source-build-version-2.3.7.0</VersionFile>
+    <VersionFile Condition="'$(TargetFramework)' == 'portable-netcore45+net45'">$(FSharpSourcesRoot)\source-build-version-2.3.6.0</VersionFile>
     <VersionFile Condition="'$(TargetFramework)' == 'windowsphone8'">$(FSharpSourcesRoot)\source-build-version-2.3.8.0</VersionFile>
 -->
   </PropertyGroup>
@@ -191,6 +191,32 @@ Some other NuGET monikers to support in the future, see http://docs.nuget.org/do
     <DefineConstants>$(DefineConstants);FX_NO_BIGINT</DefineConstants>
     <DefineConstants>$(DefineConstants);DONT_INCLUDE_DEPRECATED</DefineConstants>
     <DefineConstants>$(DefineConstants);PUT_TYPE_PROVIDERS_IN_FSCORE</DefineConstants>
+
+  </PropertyGroup>
+
+  <!-- Target Portable -->
+  <PropertyGroup Condition="'$(TargetFramework)'=='netcore45'">
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkIdentifier>.NETCore</TargetFrameworkIdentifier>
+    <DefineConstants>$(DefineConstants);NET_CORE</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_CONVERTER</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_ARRAY_LONG_LENGTH</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_EXIT</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_CHAR_PARSE</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_DEFAULT_DEPENDENCY_TYPE</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_SYSTEM_CONSOLE</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_BINARY_SERIALIZATION_NONSERIALIZED</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_BINDING_FLAGS</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_ARRAY_KEY_SORT</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_DELEGATE_DYNAMIC_METHOD</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_WEB_REQUESTS</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_WEB_CLIENT</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_PARAMETERIZED_THREAD_START </DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_THREAD</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_BIGINT</DefineConstants>
+    <OtherFlags>$(OtherFlags)  --mscorlibAssemblyName:System.Runtime</OtherFlags>
+
+    <TargetFrameworkOutputDirectory>netcore45</TargetFrameworkOutputDirectory>
 
   </PropertyGroup>
 
@@ -570,14 +596,15 @@ Some other NuGET monikers to support in the future, see http://docs.nuget.org/do
             Text="Configuration '$(Configuration)' is not one of the supported configurations: Debug, Release, Proto"
             Condition="'$(Configuration)'!='Release' and '$(Configuration)'!='Debug' and '$(Configuration)'!='Proto'"/>
     <Error
-            Text="TargetFramework '$(TargetFramework)' is not one of the supported configurations: 'empty', net20, net40, mono21, wp7, sl5, sl5-compiler, portable-net4+sl4+wp71+win8"
+            Text="TargetFramework '$(TargetFramework)' is not one of the supported configurations: 'empty', net20, net40, mono21, wp7, sl5, sl5-compiler, portable-net4+sl4+wp71+win8, netcore45"
             Condition="! ('$(TargetFramework)' == 'net40' or 
                           '$(TargetFramework)' == 'net20' or 
                           '$(TargetFramework)' == 'mono21' or 
                           '$(TargetFramework)' == 'sl5' or 
                           '$(TargetFramework)' == 'sl5-compiler' or 
                           '$(TargetFramework)' == 'wp7' or 
-                          '$(TargetFramework)' == 'portable-net4+sl4+wp71+win8')"/>
+                          '$(TargetFramework)' == 'portable-net4+sl4+wp71+win8' or 
+                          '$(TargetFramework)' == 'netcore45')"/>
   </Target>
 
   <Import Project="$(LkgPath)\..\2.0\FSharp.SRGen.targets" />

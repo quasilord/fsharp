@@ -1,7 +1,13 @@
 namespace Microsoft.FSharp.Core
 
 module internal SR =
+
+#if NET_CORE
+    let assem = System.Reflection.Assembly.Load(new System.Reflection.AssemblyName("FSharp.Core"))
+    let private resources = new System.Resources.ResourceManager("FSCore", assem)
+#else
     let private resources = new System.Resources.ResourceManager("FSCore", System.Reflection.Assembly.GetExecutingAssembly())
+#endif
 
     let matchCasesIncomplete = "matchCasesIncomplete"
     let resetNotSupported = "resetNotSupported"

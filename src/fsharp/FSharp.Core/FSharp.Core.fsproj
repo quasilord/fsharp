@@ -123,10 +123,10 @@
     <Compile Include="set.fs">
       <Link>set.fs</Link>
     </Compile>
-    <Compile Include="reflect.fsi">
+    <Compile Include="reflect.fsi"   Condition="'$(TargetFramework)' != 'netcore45'">
       <Link>reflect.fsi</Link>
     </Compile>
-    <Compile Include="reflect.fs">
+    <Compile Include="reflect.fs" Condition="'$(TargetFramework)' != 'netcore45'">
       <Link>reflect.fs</Link>
     </Compile>
     <Compile Include="event.fsi">
@@ -135,22 +135,22 @@
     <Compile Include="event.fs">
       <Link>event.fs</Link>
     </Compile>
-    <Compile Include="..\..\utils\sformat.fsi">
+    <Compile Include="..\..\utils\sformat.fsi" Condition="'$(TargetFramework)' != 'netcore45'">
       <Link>sformat.fsi</Link>
     </Compile>
-    <Compile Include="..\..\utils\sformat.fs">
+    <Compile Include="..\..\utils\sformat.fs" Condition="'$(TargetFramework)' != 'netcore45'">
       <Link>sformat.fs</Link>
     </Compile>
-    <Compile Include="printf.fsi">
+    <Compile Include="printf.fsi" Condition="'$(TargetFramework)' != 'netcore45'">
       <Link>printf.fsi</Link>
     </Compile>
-    <Compile Include="printf.fs">
+    <Compile Include="printf.fs" Condition="'$(TargetFramework)' != 'netcore45'"> 
       <Link>printf.fs</Link>
     </Compile>
-    <Compile Include="quotations.fsi">
+    <Compile Include="quotations.fsi" Condition="'$(TargetFramework)' != 'netcore45'">
       <Link>quotations.fsi</Link>
     </Compile>
-    <Compile Include="quotations.fs">
+    <Compile Include="quotations.fs" Condition="'$(TargetFramework)' != 'netcore45'">
       <Link>quotations.fs</Link>
     </Compile>
     <Compile Include="nativeptr.fsi">
@@ -159,10 +159,10 @@
     <Compile Include="nativeptr.fs">
       <Link>nativeptr.fs</Link>
     </Compile>
-    <Compile Include="control.fsi">
+    <Compile Include="control.fsi" Condition="'$(TargetFramework)' != 'netcore45'">
       <Link>control.fsi</Link>
     </Compile>
-    <Compile Include="control.fs">
+    <Compile Include="control.fs" Condition="'$(TargetFramework)' != 'netcore45'">
       <Link>control.fs</Link>
     </Compile>
     <Compile Include="Linq.fsi">
@@ -198,10 +198,10 @@
     <Compile Include="math\z.fs">
       <Link>z.fs</Link>
     </Compile>
-    <Compile Include="fslib-extra-pervasives.fsi">
+    <Compile Include="fslib-extra-pervasives.fsi" Condition="'$(TargetFramework)' != 'netcore45'">
       <Link>fslib-extra-pervasives.fsi</Link>
     </Compile>
-    <Compile Include="fslib-extra-pervasives.fs">
+    <Compile Include="fslib-extra-pervasives.fs" Condition="'$(TargetFramework)' != 'netcore45'">
       <Link>fslib-extra-pervasives.fs</Link>
     </Compile>
     <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Core.dll.fs">
@@ -212,12 +212,29 @@
     </CustomAdditionalCompileInputs>
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="mscorlib" />
-    <Reference Include="System" />
+
+    <Reference Include="mscorlib" Condition="'$(TargetFramework)' != 'netcore45'" />
+    <Reference Include="System" Condition="'$(TargetFramework)' != 'netcore45'" />
     <Reference Include="System.Numerics" Condition="'$(TargetFramework)' == 'net40'" />
     <Reference Include="System.Net" Condition="'$(TargetFramework)' == 'sl5' OR '$(TargetFramework)' == 'sl5-compiler' OR '$(TargetFramework)' == 'XNA\5.0' OR '$(TargetFramework)' == 'wp7' OR '$(TargetFramework)' == 'portable-net4+sl4+wp71+win8' " />
     <Reference Include="System.Observable" Condition="'$(TargetFramework)' == 'wp7' " />
     <Reference Include="System.Core" Condition="'$(TargetFramework)' == 'sl5' OR '$(TargetFramework)' == 'sl5-compiler' OR '$(TargetFramework)' == 'XNA\5.0' OR '$(TargetFramework)' == 'wp7' OR '$(TargetFramework)' == 'portable-net4+sl4+wp71+win8'  " />
+    <Reference Include="System.Runtime" Condition="'$(TargetFramework)' == 'netcore45'" />
+    <Reference Include="System.Runtime.Extensions" Condition="'$(TargetFramework)' == 'netcore45'" />
+    <Reference Include="System.Resources.ResourceManager" Condition="'$(TargetFramework)' == 'netcore45'" />
+    <Reference Include="System.Reflection" Condition="'$(TargetFramework)' == 'netcore45'" />
+    <Reference Include="System.Reflection.Extensions" Condition="'$(TargetFramework)' == 'netcore45'" />
+    <Reference Include="System.Globalization" Condition="'$(TargetFramework)' == 'netcore45'" />
+    <Reference Include="System.IO" Condition="'$(TargetFramework)' == 'netcore45'" />
+    <Reference Include="System.Diagnostics.Tools" Condition="'$(TargetFramework)' == 'netcore45'" />
+    <Reference Include="System.Collections" Condition="'$(TargetFramework)' == 'netcore45'" />
+    <Reference Include="System.Linq" Condition="'$(TargetFramework)' == 'netcore45'" />
+    <Reference Include="System.Threading" Condition="'$(TargetFramework)' == 'netcore45'" />
+    <Reference Include="System.Diagnostics.Debug" Condition="'$(TargetFramework)' == 'netcore45'" />
+    <Reference Include="System.Threading.Tasks" Condition="'$(TargetFramework)' == 'netcore45'" />
+    <Reference Include="System.Threading.Tasks.Parallel" Condition="'$(TargetFramework)' == 'netcore45'" />
+    <Reference Include="System.Runtime.Serialization.Primitives" Condition="'$(TargetFramework)' == 'netcore45'" />
+
   </ItemGroup>
   <!-- References -->
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />

@@ -526,11 +526,17 @@ namespace Microsoft.FSharp.Collections
 
 #if FX_NO_BINARY_SERIALIZATION
 #else
+#if FX_NO_BINARY_SERIALIZATION_NONSERIALIZED
+#else
         [<System.NonSerialized>]
+#endif
         // NOTE: This type is logically immutable. This field is only mutated during deserialization. 
         let mutable comparer = comparer 
         
+#if FX_NO_BINARY_SERIALIZATION_NONSERIALIZED
+#else
         [<System.NonSerialized>]
+#endif
         // NOTE: This type is logically immutable. This field is only mutated during deserialization. 
         let mutable tree = tree  
         
