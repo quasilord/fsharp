@@ -67,7 +67,11 @@ type FSharpValue =
     /// <param name="bindingFlags">Optional binding flags for the record.</param>
     /// <exception cref="System.ArgumentException">Thrown when the input type is not a record type.</exception>
     /// <returns>The created record.</returns>
+#if NET_CORE
+    static member MakeRecord: recordType:Type * values:obj [] -> obj
+#else
     static member MakeRecord: recordType:Type * values:obj [] * ?bindingFlags:BindingFlags  -> obj
+#endif
 
     /// <summary>Reads a field from a record value.</summary>
     ///
@@ -85,7 +89,11 @@ type FSharpValue =
     /// <param name="bindingFlags">Optional binding flags for the record.</param>
     /// <exception cref="System.ArgumentException">Thrown when the input type is not a record type.</exception>
     /// <returns>The array of fields from the record.</returns>
+#if NET_CORE
+    static member GetRecordFields:  record:obj -> obj[]
+#else
     static member GetRecordFields:  record:obj * ?bindingFlags:BindingFlags  -> obj[]
+#endif
 
     
     /// <summary>Precompute a function for reading a particular field from a record.
@@ -114,7 +122,11 @@ type FSharpValue =
     /// <param name="bindingFlags">Optional binding flags.</param>
     /// <exception cref="System.ArgumentException">Thrown when the input type is not a record type.</exception>
     /// <returns>An optimized reader for the given record type.</returns>
+#if NET_CORE
+    static member PreComputeRecordReader : recordType:Type  -> (obj -> obj[])
+#else
     static member PreComputeRecordReader : recordType:Type  * ?bindingFlags:BindingFlags -> (obj -> obj[])
+#endif
 
 
     /// <summary>Precompute a function for constructing a record value. </summary>
@@ -125,20 +137,32 @@ type FSharpValue =
     /// <param name="bindingFlags">Optional binding flags.</param>
     /// <exception cref="System.ArgumentException">Thrown when the input type is not a record type.</exception>
     /// <returns>A function to construct records of the given type.</returns>
+#if NET_CORE
+    static member PreComputeRecordConstructor : recordType:Type  -> (obj[] -> obj)
+#else
     static member PreComputeRecordConstructor : recordType:Type  * ?bindingFlags:BindingFlags -> (obj[] -> obj)
+#endif
 
     /// <summary>Get a ConstructorInfo for a record type</summary>
     /// <param name="recordType">The record type.</param>
     /// <param name="bindingFlags">Optional binding flags.</param>
     /// <returns>A ConstructorInfo for the given record type.</returns>
+#if NET_CORE
+    static member PreComputeRecordConstructorInfo: recordType:Type -> ConstructorInfo
+#else
     static member PreComputeRecordConstructorInfo: recordType:Type * ?bindingFlags:BindingFlags -> ConstructorInfo
+#endif
     
     /// <summary>Create a union case value.</summary>
     /// <param name="unionCase">The description of the union case to create.</param>
     /// <param name="args">The array of arguments to construct the given case.</param>
     /// <param name="bindingFlags">Optional binding flags.</param>
     /// <returns>The constructed union case.</returns>
+#if NET_CORE
+    static member MakeUnion: unionCase:UnionCaseInfo * args:obj [] -> obj
+#else
     static member MakeUnion: unionCase:UnionCaseInfo * args:obj [] * ?bindingFlags:BindingFlags -> obj
+#endif
 
     /// <summary>Identify the union case and its fields for an object</summary>
     ///
@@ -152,7 +176,11 @@ type FSharpValue =
     /// <param name="bindingFlags">Optional binding flags.</param>
     /// <exception cref="System.ArgumentException">Thrown when the input type is not a union case value.</exception>
     /// <returns>The description of the union case and its fields.</returns>
+#if NET_CORE
+    static member GetUnionFields:  value:obj * unionType:Type -> UnionCaseInfo * obj []
+#else
     static member GetUnionFields:  value:obj * unionType:Type * ?bindingFlags:BindingFlags -> UnionCaseInfo * obj []
+#endif
     
     /// <summary>Assumes the given type is a union type. 
     /// If not, ArgumentException is raised during pre-computation.</summary>
@@ -163,13 +191,21 @@ type FSharpValue =
     /// <param name="unionType">The type of union to optimize reading.</param>
     /// <param name="bindingFlags">Optional binding flags.</param>
     /// <returns>An optimized function to read the tags of the given union type.</returns>
+#if NET_CORE
+    static member PreComputeUnionTagReader          : unionType:Type  -> (obj -> int)
+#else
     static member PreComputeUnionTagReader          : unionType:Type  * ?bindingFlags:BindingFlags -> (obj -> int)
+#endif
 
     /// <summary>Precompute a property or static method for reading an integer representing the case tag of a union type.</summary>
     /// <param name="unionType">The type of union to read.</param>
     /// <param name="bindingFlags">Optional binding flags.</param>
     /// <returns>The description of the union case reader.</returns>
+#if NET_CORE
+    static member PreComputeUnionTagMemberInfo : unionType:Type  -> MemberInfo
+#else
     static member PreComputeUnionTagMemberInfo : unionType:Type  * ?bindingFlags:BindingFlags -> MemberInfo
+#endif
 
     /// <summary>Precomputes a function for reading all the fields for a particular discriminator case of a union type</summary>
     ///
@@ -177,19 +213,31 @@ type FSharpValue =
     /// <param name="unionCase">The description of the union case to read.</param>
     /// <param name="bindingFlags">Optional binding flags.</param>
     /// <returns>A function to for reading the fields of the given union case.</returns>
+#if NET_CORE
+    static member PreComputeUnionReader       : unionCase:UnionCaseInfo  -> (obj -> obj[])
+#else
     static member PreComputeUnionReader       : unionCase:UnionCaseInfo  * ?bindingFlags:BindingFlags -> (obj -> obj[])
+#endif
 
     /// <summary>Precomputes a function for constructing a discriminated union value for a particular union case. </summary>
     /// <param name="unionCase">The description of the union case.</param>
     /// <param name="bindingFlags">Optional binding flags.</param>
     /// <returns>A function for constructing values of the given union case.</returns>
+#if NET_CORE
+    static member PreComputeUnionConstructor : unionCase:UnionCaseInfo  -> (obj[] -> obj)
+#else
     static member PreComputeUnionConstructor : unionCase:UnionCaseInfo  * ?bindingFlags:BindingFlags -> (obj[] -> obj)
+#endif
 
     /// <summary>A method that constructs objects of the given case</summary>
     /// <param name="unionCase">The description of the union case.</param>
     /// <param name="bindingFlags">Optional binding flags.</param>
     /// <returns>The description of the constructor of the given union case.</returns>
+#if NET_CORE
+    static member PreComputeUnionConstructorInfo: unionCase:UnionCaseInfo -> MethodInfo
+#else
     static member PreComputeUnionConstructorInfo: unionCase:UnionCaseInfo * ?bindingFlags:BindingFlags -> MethodInfo
+#endif
 
     /// <summary>Creates an instance of a tuple type</summary>
     ///
@@ -267,7 +315,11 @@ type FSharpValue =
     /// <param name="bindingFlags">Optional binding flags.</param>
     /// <exception cref="System.ArgumentException">Thrown when the input type is not an F# exception.</exception>
     /// <returns>The fields from the given exception.</returns>
+#if NET_CORE
+    static member GetExceptionFields:  exn:obj -> obj[]
+#else
     static member GetExceptionFields:  exn:obj * ?bindingFlags:BindingFlags  -> obj[]
+#endif
 
 
 [<AbstractClass; Sealed>]
@@ -280,7 +332,11 @@ type FSharpType =
     /// <param name="recordType">The input record type.</param>
     /// <param name="bindingFlags">Optional binding flags.</param>
     /// <returns>An array of descriptions of the properties of the record type.</returns>
+#if NET_CORE
+    static member GetRecordFields: recordType:Type -> PropertyInfo[]
+#else
     static member GetRecordFields: recordType:Type * ?bindingFlags:BindingFlags -> PropertyInfo[]
+#endif
 
     /// <summary>Gets the cases of a union type.</summary>
     ///
@@ -289,7 +345,11 @@ type FSharpType =
     /// <param name="bindingFlags">Optional binding flags.</param>
     /// <exception cref="System.ArgumentException">Thrown when the input type is not a union type.</exception>
     /// <returns>An array of descriptions of the cases of the given union type.</returns>
+#if NET_CORE
+    static member GetUnionCases: unionType:Type -> UnionCaseInfo[]
+#else
     static member GetUnionCases: unionType:Type * ?bindingFlags:BindingFlags -> UnionCaseInfo[]
+#endif
 
     /// <summary>Returns a <c>System.Type</c> representing the F# function type with the given domain and range</summary>
     /// <param name="domain">The input type of the function.</param>
@@ -321,13 +381,21 @@ type FSharpType =
     /// <param name="typ">The type to check.</param>
     /// <param name="bindingFlags">Optional binding flags.</param>
     /// <returns>True if the type check succeeds.</returns>
+#if NET_CORE
+    static member IsRecord: typ:Type -> bool
+#else
     static member IsRecord: typ:Type * ?bindingFlags:BindingFlags -> bool
+#endif
 
     /// <summary>Returns true if the <c>typ</c> is a representation of an F# union type or the runtime type of a value of that type</summary>
     /// <param name="typ">The type to check.</param>
     /// <param name="bindingFlags">Optional binding flags.</param>
     /// <returns>True if the type check succeeds.</returns>
+#if NET_CORE
+    static member IsUnion: typ:Type -> bool
+#else
     static member IsUnion: typ:Type * ?bindingFlags:BindingFlags -> bool
+#endif
 
     /// <summary>Gets the tuple elements from the representation of an F# tuple type.</summary>
     /// <param name="tupleType">The input tuple type.</param>
@@ -346,13 +414,21 @@ type FSharpType =
     /// <param name="bindingFlags">Optional binding flags.</param>
     /// <exception cref="System.ArgumentException">Thrown if the given type is not an exception.</exception>
     /// <returns>An array containing the PropertyInfo of each field in the exception.</returns>
+#if NET_CORE
+    static member GetExceptionFields: exceptionType:Type -> PropertyInfo[]
+#else
     static member GetExceptionFields: exceptionType:Type * ?bindingFlags:BindingFlags -> PropertyInfo[]
+#endif
 
     /// <summary>Returns true if the <c>typ</c> is a representation of an F# exception declaration</summary>
     /// <param name="exceptionType">The type to check.</param>
     /// <param name="bindingFlags">Optional binding flags.</param>
     /// <returns>True if the type check is an F# exception.</returns>
+#if NET_CORE
+    static member IsExceptionRepresentation: exceptionType:Type -> bool
+#else
     static member IsExceptionRepresentation: exceptionType:Type * ?bindingFlags:BindingFlags -> bool
+#endif
 
 #if SILVERLIGHT
 [<Class>]

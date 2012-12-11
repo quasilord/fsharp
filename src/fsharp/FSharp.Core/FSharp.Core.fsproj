@@ -123,10 +123,10 @@
     <Compile Include="set.fs">
       <Link>set.fs</Link>
     </Compile>
-    <Compile Include="reflect.fsi"   Condition="'$(TargetFramework)' != 'netcore45'">
+    <Compile Include="reflect.fsi">
       <Link>reflect.fsi</Link>
     </Compile>
-    <Compile Include="reflect.fs" Condition="'$(TargetFramework)' != 'netcore45'">
+    <Compile Include="reflect.fs">
       <Link>reflect.fs</Link>
     </Compile>
     <Compile Include="event.fsi">

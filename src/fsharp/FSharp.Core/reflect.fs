@@ -23,6 +23,64 @@ open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Primitives.Basics
 
+[<AutoOpen>]
+module internal Utilities =
+
+#if NET_CORE
+    type AttributeValue = System.Attribute
+
+    type BindingFlags =
+        | Default = 0
+        | IgnoreCase = 1
+        | DeclaredOnly = 2
+        | Instance = 4
+        | Static = 8
+        | Public = 16
+        | NonPublic = 32
+        | FlattenHierarchy = 64
+        | InvokeMethod = 256
+        | CreateInstance = 512
+        | GetField = 1024
+        | SetField = 2048
+        | GetProperty = 4096
+        | SetProperty = 8192
+        | PutDispProperty = 16384
+        | PutRefDispProperty = 32768
+        | ExactBinding = 65536
+        | SuppressChangeType = 131072
+        | OptionalParamBinding = 262144
+        | IgnoreReturn = 16777216
+#else
+    type AttributeValue = obj
+#endif
+    type System.Type with 
+        member x.IsGenericType = x.GetTypeInfo().IsGenericType
+        member x.IsGenericTypeDefinition = x.GetTypeInfo().IsGenericTypeDefinition
+        member x.GetGenericArguments() = x.GetTypeInfo().GenericTypeArguments
+        member x.GetNestedType(nm:string, _bindingFlags:BindingFlags) = x.GetTypeInfo().GetDeclaredNestedType(nm).AsType()
+        member x.GetMethods(_bindingFlags:BindingFlags) = x.GetTypeInfo().DeclaredMethods |> Seq.toArray
+        member x.GetMethods() = x.GetTypeInfo().DeclaredMethods |> Seq.toArray
+        member x.GetCustomAttributes(attributeType,inherrit) = x.GetTypeInfo().GetCustomAttributes(attributeType,inherrit) |> Seq.toArray
+        member x.GetFields(_bindingFlags:BindingFlags:BindingFlags) = x.GetTypeInfo().DeclaredFields |> Seq.toArray
+        member x.GetProperty(propName,_bindingFlags:BindingFlags) = x.GetTypeInfo().GetDeclaredProperty(propName) 
+        // Note: This is approximate - it works based on the number of arguments
+        member x.GetConstructor(_bindingFlags:BindingFlags,_binder,argTypes:Type[],_arg4) = x.GetTypeInfo().DeclaredConstructors |> Seq.find (fun n -> n.GetParameters().Length = argTypes.Length)
+        member x.GetMethod(methName,_bindingFlags:BindingFlags) = x.GetTypeInfo().GetDeclaredMethod(methName)
+        member x.GetMethod(methName,_bindingFlags:BindingFlags,_binder,_argTypes,_returnType) = x.GetTypeInfo().GetDeclaredMethod(methName)
+        member x.GetProperties(_bindingFlags:BindingFlags) = x.GetTypeInfo().DeclaredProperties |> Seq.toArray
+        member x.GetProperties() = x.GetTypeInfo().DeclaredProperties |> Seq.toArray
+        member x.BaseType = x.GetTypeInfo().BaseType
+
+    type System.Reflection.PropertyInfo with 
+        member x.GetValue(obj,_bindingFlags,_arg3,_arg4,_arg5) = x.GetValue(obj)
+
+    type System.Reflection.MethodInfo with 
+        member x.Invoke(obj,_bindingFlags,_arg3,args,_arg5) = x.Invoke(obj,args)
+        member x.GetCustomAttributesData() = x.CustomAttributes
+
+    type System.Reflection.ConstructorInfo with 
+        member x.Invoke(_bindingFlags,_arg3,args,_arg5) = x.Invoke(args)
+
 module internal Impl =
 
     let debug = false
@@ -54,6 +112,14 @@ module internal Impl =
     //-----------------------------------------------------------------
     // GENERAL UTILITIES
 
+
+#if FX_NO_BINDING_FLAGS
+    let instancePropertyFlags = BindingFlags.Instance 
+    let staticPropertyFlags = BindingFlags.Static
+    let staticFieldFlags = BindingFlags.Static 
+    let staticMethodFlags = BindingFlags.Static 
+#else
+ 
 #if FX_ATLEAST_PORTABLE
     let instancePropertyFlags = BindingFlags.Instance 
     let staticPropertyFlags = BindingFlags.Static
@@ -64,6 +130,7 @@ module internal Impl =
     let staticPropertyFlags = BindingFlags.GetProperty ||| BindingFlags.Static
     let staticFieldFlags = BindingFlags.GetField ||| BindingFlags.Static 
     let staticMethodFlags = BindingFlags.Static 
+#endif
 #endif
 
     let getInstancePropertyInfo (typ: Type,propName,bindingFlags) = typ.GetProperty(propName,instancePropertyFlags ||| bindingFlags) 
@@ -81,13 +148,13 @@ module internal Impl =
     // ATTRIBUTE DECOMPILATION
 
 
-    let tryFindCompilationMappingAttribute (attrs:obj[]) =
+    let tryFindCompilationMappingAttribute (attrs:AttributeValue[]) =
       match attrs with
       | null | [| |] -> None
       | [| res |] -> let a = (res :?> CompilationMappingAttribute) in Some (a.SourceConstructFlags, a.SequenceNumber, a.VariantNumber)
       | _ -> raise <| System.InvalidOperationException (SR.GetString(SR.multipleCompilationMappings))
 
-    let findCompilationMappingAttribute (attrs:obj[]) =
+    let findCompilationMappingAttribute (attrs:AttributeValue[]) =
       match tryFindCompilationMappingAttribute attrs with
       | None -> failwith "no compilation mapping attribute"
       | Some a -> a
@@ -98,8 +165,6 @@ module internal Impl =
     let    findCompilationMappingAttributeFromMemberInfo (info:MemberInfo) =    findCompilationMappingAttribute (info.GetCustomAttributes (typeof<CompilationMappingAttribute>,false))
 #else
     let cmaName = typeof<CompilationMappingAttribute>.FullName
-    let assemblyName = typeof<CompilationMappingAttribute>.Assembly.GetName().Name 
-    let _ = assert (assemblyName = "FSharp.Core")
     
     let tryFindCompilationMappingAttributeFromData (attrs:System.Collections.Generic.IList<CustomAttributeData>) =
         match attrs with
@@ -107,7 +172,11 @@ module internal Impl =
         | _ -> 
             let mutable res = None
             for a in attrs do
+#if NET_CORE
+                if a.AttributeType.FullName = cmaName then 
+#else
                 if a.Constructor.DeclaringType.FullName = cmaName then 
+#endif
                     let args = a.ConstructorArguments
                     let flags = 
                          match args.Count  with 
@@ -124,25 +193,36 @@ module internal Impl =
       | Some a -> a
 
     let tryFindCompilationMappingAttributeFromType       (typ:Type)        = 
+#if NET_CORE
+#else
         let assem = typ.Assembly
         if assem <> null && assem.ReflectionOnly then 
            tryFindCompilationMappingAttributeFromData ( typ.GetCustomAttributesData())
         else
+#endif
            tryFindCompilationMappingAttribute ( typ.GetCustomAttributes (typeof<CompilationMappingAttribute>,false))
 
     let tryFindCompilationMappingAttributeFromMemberInfo (info:MemberInfo) = 
+#if NET_CORE
+        tryFindCompilationMappingAttribute (info.GetCustomAttributes (typeof<CompilationMappingAttribute>,false) |> Seq.toArray)
+#else
         let assem = info.DeclaringType.Assembly
         if assem <> null && assem.ReflectionOnly then 
            tryFindCompilationMappingAttributeFromData (info.GetCustomAttributesData())
         else
-        tryFindCompilationMappingAttribute (info.GetCustomAttributes (typeof<CompilationMappingAttribute>,false))
+           tryFindCompilationMappingAttribute (info.GetCustomAttributes (typeof<CompilationMappingAttribute>,false))
+#endif
 
     let    findCompilationMappingAttributeFromMemberInfo (info:MemberInfo) =    
+#if NET_CORE
+            findCompilationMappingAttribute (info.GetCustomAttributes (typeof<CompilationMappingAttribute>,false) |> Seq.toArray)
+#else
         let assem = info.DeclaringType.Assembly
         if assem <> null && assem.ReflectionOnly then 
             findCompilationMappingAttributeFromData (info.GetCustomAttributesData())
         else
             findCompilationMappingAttribute (info.GetCustomAttributes (typeof<CompilationMappingAttribute>,false))
+#endif
 
 #endif
 
@@ -634,13 +714,23 @@ type UnionCaseInfo(typ: System.Type, tag:int) =
         let props = Impl.fieldsPropsOfUnionCase(typ,tag,BindingFlags.Public ||| BindingFlags.NonPublic) 
         props
 
+#if NET_CORE
+    member x.GetCustomAttributes() = getMethInfo().GetCustomAttributes(false) |> Seq.map box |> Seq.toArray
+    
+    member x.GetCustomAttributes(attributeType) = getMethInfo().GetCustomAttributes(attributeType,false) |> Seq.map box |> Seq.toArray
+#else
     member x.GetCustomAttributes() = getMethInfo().GetCustomAttributes(false)
     
     member x.GetCustomAttributes(attributeType) = getMethInfo().GetCustomAttributes(attributeType,false)
+#endif
 
 #if FX_NO_CUSTOMATTRIBUTEDATA
 #else
+#if NET_CORE
+    member x.GetCustomAttributesData() = getMethInfo().GetCustomAttributesData() |> Seq.toArray :> System.Collections.Generic.IList<CustomAttributeData>
+#else
     member x.GetCustomAttributesData() = getMethInfo().GetCustomAttributesData()
+#endif
 #endif    
     member x.Tag = tag
     override x.ToString() = typ.Name + "." + x.Name
@@ -720,6 +810,15 @@ type FSharpType =
         Impl.checkNonNull "exceptionType" exceptionType;
         Impl.checkExnType(exceptionType,bindingFlags);
         Impl.fieldPropsOfRecordType (exceptionType,bindingFlags) 
+
+#if NET_CORE
+    static member IsRecord(typ) = FSharpType.IsRecord(typ,BindingFlags.Public)
+    static member IsUnion(typ) = FSharpType.IsUnion(typ,BindingFlags.Public)
+    static member GetRecordFields(recordType) = FSharpType.GetRecordFields(recordType,BindingFlags.Public)
+    static member GetUnionCases(unionType) = FSharpType.GetUnionCases(unionType,BindingFlags.Public)
+    static member IsExceptionRepresentation(exceptionType) = FSharpType.IsExceptionRepresentation(exceptionType,BindingFlags.Public)
+    static member GetExceptionFields(exceptionType) = FSharpType.GetExceptionFields(exceptionType,BindingFlags.Public)
+#endif
 
 type DynamicFunction<'T1,'T2>() =
     inherit FSharpFunc<obj -> obj, obj>()
@@ -877,3 +976,18 @@ type FSharpValue =
         Impl.getRecordReader (typ,bindingFlags) exn
 
 
+#if NET_CORE
+    static member MakeRecord(recordType,args) = FSharpValue.MakeRecord(recordType,args,BindingFlags.Public)
+    static member MakeUnion(unionCase,args) = FSharpValue.MakeUnion(unionCase,args,BindingFlags.Public)
+    static member GetRecordFields(record:obj) = FSharpValue.GetRecordFields(record,BindingFlags.Public)
+    static member PreComputeRecordReader(recordType) = FSharpValue.PreComputeRecordReader(recordType,BindingFlags.Public)
+    static member PreComputeRecordConstructor(recordType) = FSharpValue.PreComputeRecordConstructor(recordType,BindingFlags.Public)
+    static member PreComputeRecordConstructorInfo(recordType) = FSharpValue.PreComputeRecordConstructorInfo(recordType,BindingFlags.Public)
+    static member PreComputeUnionConstructor(unionCase) = FSharpValue.PreComputeUnionConstructor(unionCase,BindingFlags.Public)
+    static member PreComputeUnionConstructorInfo(unionCase) = FSharpValue.PreComputeUnionConstructorInfo(unionCase,BindingFlags.Public)
+    static member GetUnionFields(obj:obj,unionType) = FSharpValue.GetUnionFields(obj,unionType,BindingFlags.Public)
+    static member PreComputeUnionTagReader(unionType: Type) = FSharpValue.PreComputeUnionTagReader(unionType,BindingFlags.Public)
+    static member PreComputeUnionTagMemberInfo(unionType) = FSharpValue.PreComputeUnionTagMemberInfo(unionType,BindingFlags.Public)
+    static member PreComputeUnionReader(unionCase) = FSharpValue.PreComputeUnionReader(unionCase,BindingFlags.Public)
+    static member GetExceptionFields(exn:obj) = FSharpValue.GetExceptionFields(exn,BindingFlags.Public)
+#endif
