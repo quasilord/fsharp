@@ -148,10 +148,10 @@
     <Compile Include="printf.fs"> 
       <Link>printf.fs</Link>
     </Compile>
-    <Compile Include="quotations.fsi" Condition="'$(TargetFramework)' != 'netcore45'">
+    <Compile Include="quotations.fsi">
       <Link>quotations.fsi</Link>
     </Compile>
-    <Compile Include="quotations.fs" Condition="'$(TargetFramework)' != 'netcore45'">
+    <Compile Include="quotations.fs">
       <Link>quotations.fs</Link>
     </Compile>
     <Compile Include="nativeptr.fsi">
@@ -199,10 +199,10 @@
     <Compile Include="math\z.fs">
       <Link>z.fs</Link>
     </Compile>
-    <Compile Include="fslib-extra-pervasives.fsi" Condition="'$(TargetFramework)' != 'netcore45'">
+    <Compile Include="fslib-extra-pervasives.fsi">
       <Link>fslib-extra-pervasives.fsi</Link>
     </Compile>
-    <Compile Include="fslib-extra-pervasives.fs" Condition="'$(TargetFramework)' != 'netcore45'">
+    <Compile Include="fslib-extra-pervasives.fs">
       <Link>fslib-extra-pervasives.fs</Link>
     </Compile>
     <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Core.dll.fs">
@@ -214,9 +214,10 @@
   </ItemGroup>
   <ItemGroup>
 
+    <Reference Include="System.Numerics" Condition="'$(TargetFramework)' == 'net40'" />
+
     <Reference Include="mscorlib" Condition="'$(TargetFramework)' != 'netcore45'" />
     <Reference Include="System" Condition="'$(TargetFramework)' != 'netcore45'" />
-    <Reference Include="System.Numerics" Condition="'$(TargetFramework)' == 'net40'" />
     <Reference Include="System.Net" Condition="'$(TargetFramework)' == 'sl5' OR '$(TargetFramework)' == 'sl5-compiler' OR '$(TargetFramework)' == 'XNA\5.0' OR '$(TargetFramework)' == 'wp7' OR '$(TargetFramework)' == 'portable-net4+sl4+wp71+win8' " />
     <Reference Include="System.Observable" Condition="'$(TargetFramework)' == 'wp7' " />
     <Reference Include="System.Core" Condition="'$(TargetFramework)' == 'sl5' OR '$(TargetFramework)' == 'sl5-compiler' OR '$(TargetFramework)' == 'XNA\5.0' OR '$(TargetFramework)' == 'wp7' OR '$(TargetFramework)' == 'portable-net4+sl4+wp71+win8'  " />
@@ -231,11 +232,15 @@
     <Reference Include="System.Diagnostics.Tools" Condition="'$(TargetFramework)' == 'netcore45'" />
     <Reference Include="System.Collections" Condition="'$(TargetFramework)' == 'netcore45'" />
     <Reference Include="System.Linq" Condition="'$(TargetFramework)' == 'netcore45'" />
+    <Reference Include="System.Linq.Queryable" Condition="'$(TargetFramework)' == 'netcore45'" />
+    <Reference Include="System.Linq.Expressions" Condition="'$(TargetFramework)' == 'netcore45'" />
     <Reference Include="System.Threading" Condition="'$(TargetFramework)' == 'netcore45'" />
+    <Reference Include="System.Text.Encoding" Condition="'$(TargetFramework)' == 'netcore45'" />
     <Reference Include="System.Diagnostics.Debug" Condition="'$(TargetFramework)' == 'netcore45'" />
     <Reference Include="System.Threading.Tasks" Condition="'$(TargetFramework)' == 'netcore45'" />
     <Reference Include="System.Threading.Tasks.Parallel" Condition="'$(TargetFramework)' == 'netcore45'" />
     <Reference Include="System.Runtime.Serialization.Primitives" Condition="'$(TargetFramework)' == 'netcore45'" />
+    <Reference Include="System.Collections.Concurrent" Condition="'$(TargetFramework)' == 'netcore45'" />
 
   </ItemGroup>
   <!-- References -->

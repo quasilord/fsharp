@@ -186,7 +186,6 @@ Some other NuGET monikers to support in the future, see http://docs.nuget.org/do
     <DefineConstants>$(DefineConstants);FX_NO_THREADPOOL</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_WAITONE_MILLISECONDS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_TPL_PARALLEL</DefineConstants>
-    <DefineConstants>$(DefineConstants);PUT_TYPE_PROVIDERS_IN_FSCORE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CUSTOMATTRIBUTEDATA</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_BIGINT</DefineConstants>
     <DefineConstants>$(DefineConstants);DONT_INCLUDE_DEPRECATED</DefineConstants>
@@ -200,6 +199,10 @@ Some other NuGET monikers to support in the future, see http://docs.nuget.org/do
     <TargetFrameworkIdentifier>.NETCore</TargetFrameworkIdentifier>
     <DefineConstants>$(DefineConstants);NET_CORE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CONVERTER</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_METADATA_TOKENS</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_MODULES</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_METHOD_HANDLE</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_EMIT</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_ARRAY_LONG_LENGTH</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_EXIT</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CHAR_PARSE</DefineConstants>
@@ -214,6 +217,9 @@ Some other NuGET monikers to support in the future, see http://docs.nuget.org/do
     <DefineConstants>$(DefineConstants);FX_NO_PARAMETERIZED_THREAD_START </DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_THREAD</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_BIGINT</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_ATLEAST_LINQ</DefineConstants>
+<!--    <DefineConstants>$(DefineConstants);QUERIES_IN_FSLIB</DefineConstants> -->
+    <DefineConstants>$(DefineConstants);PUT_TYPE_PROVIDERS_IN_FSCORE</DefineConstants>
     <OtherFlags>$(OtherFlags)  --mscorlibAssemblyName:System.Runtime</OtherFlags>
 
     <TargetFrameworkOutputDirectory>netcore45</TargetFrameworkOutputDirectory>

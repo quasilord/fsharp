@@ -194,7 +194,11 @@ module internal Adapters =
     let (|RecordFieldGetSimplification|_|) (expr:Expr) = 
         match expr with 
         | Patterns.PropertyGet(Some (Patterns.NewRecord(typ,els)),propInfo,[]) ->
+#if NET_CORE
+            let fields = Microsoft.FSharp.Reflection.FSharpType.GetRecordFields(typ) 
+#else
             let fields = Microsoft.FSharp.Reflection.FSharpType.GetRecordFields(typ,System.Reflection.BindingFlags.Public|||System.Reflection.BindingFlags.NonPublic) 
+#endif
             match fields |> Array.tryFindIndex (fun p -> p = propInfo) with 
             | None -> None
             | Some i -> if i < els.Length then Some els.[i] else None

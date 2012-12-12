@@ -61,7 +61,7 @@ module Helpers =
     let staticBindingFlags = BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.DeclaredOnly
     let staticOrInstanceBindingFlags = BindingFlags.Instance ||| BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.DeclaredOnly
     let instanceBindingFlags = BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.DeclaredOnly
-    let publicOrPrivateBindingFlags = System.Reflection.BindingFlags.Public ||| System.Reflection.BindingFlags.NonPublic
+    let publicOrPrivateBindingFlags = BindingFlags.Public ||| BindingFlags.NonPublic
 
     let isDelegateType (typ:Type) = 
         if typ.IsSubclassOf(typeof<Delegate>) then
@@ -491,13 +491,21 @@ module Patterns =
 
     // Returns record member specified by name
     let getRecordProperty(ty,fieldName) =    
+#if NET_CORE
+        let mems = FSharpType.GetRecordFields(ty)
+#else
         let mems = FSharpType.GetRecordFields(ty,publicOrPrivateBindingFlags)
+#endif
         match mems |> Array.tryFind (fun minfo -> minfo.Name = fieldName) with
         | Some (m) -> m
         | _ -> invalidArg  "fieldName" (SR.GetString2(SR.QmissingRecordField, ty.FullName, fieldName))
 
     let getUnionCaseInfo(ty,unionCaseName) =    
+#if NET_CORE
+        let cases = FSharpType.GetUnionCases(ty)
+#else
         let cases = FSharpType.GetUnionCases(ty,publicOrPrivateBindingFlags)
+#endif
         match cases |> Array.tryFind (fun ucase -> ucase.Name = unionCaseName) with
         | Some(case) -> case
         | _ -> invalidArg  "unionCaseName" (SR.GetString2(SR.QmissingUnionCase, ty.FullName, unionCaseName))
@@ -621,7 +629,11 @@ module Patterns =
   
     // Returns option (by name) of a NewUnionCase type
     let getUnionCaseFields ty str =       
+#if NET_CORE
+        let cases = FSharpType.GetUnionCases(ty)
+#else
         let cases = FSharpType.GetUnionCases(ty,publicOrPrivateBindingFlags)
+#endif
         match cases |> Array.tryFind (fun ucase -> ucase.Name = str) with
         | Some(case) -> case.GetFields()
         | _ -> invalidArg  "ty" (SR.GetString1(SR.notAUnionType, ty.FullName))
@@ -680,7 +692,11 @@ module Patterns =
     
     // Records
     let mkNewRecord (ty,args:list<Expr>) = 
+#if NET_CORE
+        let mems = FSharpType.GetRecordFields(ty) 
+#else
         let mems = FSharpType.GetRecordFields(ty,publicOrPrivateBindingFlags) 
+#endif
         if (args.Length <> mems.Length) then invalidArg  "args" (SR.GetString(SR.QincompatibleRecordLength))
         List.iter2 (fun (minfo:PropertyInfo) a -> checkTypesSR minfo.PropertyType (typeOf a) "recd" (SR.GetString(SR.QtmmIncorrectArgForRecord))) (Array.toList mems) args
         mkFEN (NewRecordOp ty) args
@@ -943,10 +959,16 @@ module Patterns =
         let argtyps : Type list = argTypes |> inst tyargs
         let retType : Type = retType |> inst tyargs |> removeVoid
 #if FX_ATLEAST_PORTABLE
-        typ.GetProperty(propName, retType, Array.ofList argtyps) |> checkNonNullResult ("propName", SR.GetString1(SR.QfailedToBindProperty, propName)) // fxcop may not see "propName" as an arg
+        typ.GetProperty(propName, retType, Array.ofList argtyps) 
 #else        
-        typ.GetProperty(propName, staticOrInstanceBindingFlags, null, retType, Array.ofList argtyps, null) |> checkNonNullResult ("propName", SR.GetString1(SR.QfailedToBindProperty, propName)) // fxcop may not see "propName" as an arg
+#if NET_CORE
+        typ.GetProperty(propName, retType, Array.ofList argtyps) 
+#else
+        typ.GetProperty(propName, staticOrInstanceBindingFlags, null, retType, Array.ofList argtyps, null) 
 #endif
+          |> checkNonNullResult ("propName", SR.GetString1(SR.QfailedToBindProperty, propName)) // fxcop may not see "propName" as an arg
+#endif
+
     let bindField (tc,fldName,tyargs) =
         let typ = mkNamedType(tc,tyargs)
         typ.GetField(fldName,staticOrInstanceBindingFlags) |> checkNonNullResult ("fldName", SR.GetString1(SR.QfailedToBindField, fldName))  // fxcop may not see "fldName" as an arg
@@ -954,18 +976,28 @@ module Patterns =
     let bindGenericCtor (tc:Type,argTypes:Instantiable<Type list>) =
         let argtyps =  instFormal (getGenericArguments tc) argTypes
 #if FX_ATLEAST_PORTABLE
-        tc.GetConstructor(Array.ofList argtyps) |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor))  // fxcop may not see "tc" as an arg
+        tc.GetConstructor(Array.ofList argtyps) 
 #else        
-        tc.GetConstructor(instanceBindingFlags,null,Array.ofList argtyps,null) |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor))  // fxcop may not see "tc" as an arg
+#if NET_CORE
+        tc.GetConstructor(Array.ofList argtyps) 
+#else
+        tc.GetConstructor(instanceBindingFlags,null,Array.ofList argtyps,null) 
 #endif
+#endif
+            |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor))  // fxcop may not see "tc" as an arg
     let bindCtor (tc,argTypes:Instantiable<Type list>,tyargs) =
         let typ = mkNamedType(tc,tyargs)
         let argtyps = argTypes |> inst tyargs
 #if FX_ATLEAST_PORTABLE
-        typ.GetConstructor(Array.ofList argtyps) |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor)) // fxcop may not see "tc" as an arg
+        typ.GetConstructor(Array.ofList argtyps) 
 #else        
-        typ.GetConstructor(instanceBindingFlags,null,Array.ofList argtyps,null) |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor)) // fxcop may not see "tc" as an arg
+#if NET_CORE
+        typ.GetConstructor(Array.ofList argtyps) 
+#else
+        typ.GetConstructor(instanceBindingFlags,null,Array.ofList argtyps,null) 
 #endif
+#endif
+            |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor)) // fxcop may not see "tc" as an arg
 
     let chop n xs =
         if n < 0 then invalidArg "n" (SR.GetString(SR.inputMustBeNonNegative))
@@ -1118,7 +1150,7 @@ module Patterns =
         if a = "" then mscorlib
         elif a = "." then st.localAssembly 
         else 
-            match System.Reflection.Assembly.Load(a) with 
+            match System.Reflection.Assembly.Load(AssemblyName(a)) with 
             | null -> raise <| System.InvalidOperationException(SR.GetString1(SR.QfailedToBindAssembly, a.ToString()))
             | ass -> ass
         
@@ -1765,7 +1797,11 @@ module DerivedPatterns =
                match tm with
                | Call(obj,minfo2,args) 
 #if FX_NO_REFLECTION_METADATA_TOKENS
+#if FX_NO_REFLECTION_METHOD_HANDLE
+                  when (
+#else
                   when (minfo1.MethodHandle = minfo2.MethodHandle &&
+#endif
 #else               
                   when (minfo1.MetadataToken = minfo2.MetadataToken &&
 #endif                  

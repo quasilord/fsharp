@@ -44,10 +44,17 @@ type internal BindingFlags =
 
 [<AutoOpen>]
 module internal Utilities =
+    // Internal helpers to simplify .NETCore code. Binding flags are always ignored.
+    type System.Reflection.Assembly with 
+        member GetTypes : unit -> Type[]
 
     // Internal helpers to simplify .NETCore code. Binding flags are always ignored.
     type System.Type with 
+        member Assembly : System.Reflection.Assembly
+        member Module : System.Reflection.Module
         member IsGenericType : bool
+        member IsValueType : bool
+        member IsEnum : bool
         member IsGenericTypeDefinition : bool
         member GetGenericArguments : unit -> Type[]
         member BaseType : Type
@@ -55,23 +62,40 @@ module internal Utilities =
         member GetInterfaces : unit -> Type[]
         member GetProperty: propName:string -> PropertyInfo
         member GetProperty: propName:string  * bindingFlags:BindingFlags -> PropertyInfo
+        member GetField: propName:string  * bindingFlags:BindingFlags -> FieldInfo
         member GetProperties : bindingFlags:BindingFlags  -> PropertyInfo[]
         member GetProperties : unit -> PropertyInfo[]
+        member GetMethod : methName:string * bindingFlags:BindingFlags -> MethodInfo
+        member GetMethod : methName:string -> MethodInfo
+        member IsSubclassOf : otherType:Type -> bool
+        member IsAssignableFrom : otherType:Type -> bool
+        member GetMethods : bindingFlags:BindingFlags -> MethodInfo[]
+        member GetConstructors : unit -> ConstructorInfo[]
+        member GetMethods : unit -> MethodInfo[]
+
+        [<CompilerMessage("TODO: This method is approximate",10001) >]// WARNING: this currently 
+        member GetProperty: propName:string  * returnType:Type * argTypes:Type[]-> PropertyInfo
+
+        [<CompilerMessage("TODO: This method is approximate",10001) >]// WARNING: this currently 
+        member GetConstructor: argTypes:Type[]-> ConstructorInfo
+        
+        [<CompilerMessage("TODO: This method is approximate",10001) >]// WARNING: this currently 
+        member GetMethod : methName:string * bindingFlags:BindingFlags * binder:obj * argTypes:Type[] * returnType:Type -> MethodInfo
+
 (*
         member x.GetNestedType(nm:string, _bindingFlags:BindingFlags) = x.GetTypeInfo().GetDeclaredNestedType(nm).AsType()
-        member x.GetMethods(_bindingFlags:BindingFlags) = x.GetTypeInfo().DeclaredMethods |> Seq.toArray
         member x.GetMethods() = x.GetTypeInfo().DeclaredMethods |> Seq.toArray
         member x.GetCustomAttributes(attributeType,inherrit) = x.GetTypeInfo().GetCustomAttributes(attributeType,inherrit) |> Seq.toArray
         member x.GetFields(_bindingFlags:BindingFlags:BindingFlags) = x.GetTypeInfo().DeclaredFields |> Seq.toArray
         member x.GetProperty(propName,_bindingFlags:BindingFlags) = x.GetTypeInfo().GetDeclaredProperty(propName) 
         // Note: This is approximate - it works based on the number of arguments
         member x.GetConstructor(_bindingFlags:BindingFlags,_binder,argTypes:Type[],_arg4) = x.GetTypeInfo().DeclaredConstructors |> Seq.find (fun n -> n.GetParameters().Length = argTypes.Length)
-        member x.GetMethod(methName,_bindingFlags:BindingFlags) = x.GetTypeInfo().GetDeclaredMethod(methName)
-        member x.GetMethod(methName,_bindingFlags:BindingFlags,_binder,_argTypes,_returnType) = x.GetTypeInfo().GetDeclaredMethod(methName)
-        member x.GetProperties(_bindingFlags:BindingFlags) = x.GetTypeInfo().DeclaredProperties |> Seq.toArray
-        member x.GetProperties() = x.GetTypeInfo().DeclaredProperties |> Seq.toArray
 
+*)
     type System.Reflection.PropertyInfo with 
+        member GetGetMethod : nonPublic:bool -> MethodInfo
+        member GetSetMethod : nonPublic:bool -> MethodInfo
+(*
         member x.GetValue(obj,_bindingFlags,_arg3,_arg4,_arg5) = x.GetValue(obj)
 
     type System.Reflection.MethodInfo with 
@@ -81,6 +105,9 @@ module internal Utilities =
     type System.Reflection.ConstructorInfo with 
         member x.Invoke(_bindingFlags,_arg3,args,_arg5) = x.Invoke(args)
 *)
+//    type System.Reflection.FieldInfo with 
+//        member IsStatic : bool
+
 #endif
 //---------------------------------------------------------------------
 // F# reified type inspection.

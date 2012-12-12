@@ -56,7 +56,12 @@ module internal Utilities =
 
 #if NET_CORE
     type System.Type with 
+        member x.IsAssignableFrom(ty:Type) = x.GetTypeInfo().IsAssignableFrom(ty.GetTypeInfo())
+        member x.IsSubclassOf(ty) = x.GetTypeInfo().IsSubclassOf(ty)
         member x.IsGenericType = x.GetTypeInfo().IsGenericType
+        member x.IsValueType = x.GetTypeInfo().IsValueType
+        member x.Module = x.GetTypeInfo().Module
+        member x.IsEnum = x.GetTypeInfo().IsEnum
         member x.IsGenericTypeDefinition = x.GetTypeInfo().IsGenericTypeDefinition
         member x.GetGenericArguments() = x.GetTypeInfo().GenericTypeArguments
         member x.GetNestedType(nm:string, _bindingFlags:BindingFlags) = x.GetTypeInfo().GetDeclaredNestedType(nm).AsType()
@@ -65,16 +70,38 @@ module internal Utilities =
         member x.GetCustomAttributes(attributeType,inherrit) = x.GetTypeInfo().GetCustomAttributes(attributeType,inherrit) |> Seq.toArray
         member x.GetFields(_bindingFlags:BindingFlags:BindingFlags) = x.GetTypeInfo().DeclaredFields |> Seq.toArray
         member x.GetProperty(propName,_bindingFlags:BindingFlags) = x.GetTypeInfo().GetDeclaredProperty(propName) 
-        // Note: This is approximate - it works based on the number of arguments
+        member x.GetProperty(propName) = x.GetTypeInfo().GetDeclaredProperty(propName) 
+        member x.GetField(propName) = x.GetTypeInfo().GetDeclaredField(propName) 
+        member x.GetField(propName,_bindingFlags:BindingFlags) = x.GetTypeInfo().GetDeclaredField(propName) 
         member x.GetConstructor(_bindingFlags:BindingFlags,_binder,argTypes:Type[],_arg4) = x.GetTypeInfo().DeclaredConstructors |> Seq.find (fun n -> n.GetParameters().Length = argTypes.Length)
         member x.GetMethod(methName,_bindingFlags:BindingFlags) = x.GetTypeInfo().GetDeclaredMethod(methName)
-        member x.GetMethod(methName,_bindingFlags:BindingFlags,_binder,_argTypes,_returnType) = x.GetTypeInfo().GetDeclaredMethod(methName)
+        member x.GetMethod(methName) = x.GetTypeInfo().GetDeclaredMethod(methName)
         member x.GetProperties(_bindingFlags:BindingFlags) = x.GetTypeInfo().DeclaredProperties |> Seq.toArray
         member x.GetProperties() = x.GetTypeInfo().DeclaredProperties |> Seq.toArray
+        member x.GetConstructors() = x.GetTypeInfo().DeclaredConstructors |> Seq.toArray
         member x.GetInterfaces() = x.GetTypeInfo().ImplementedInterfaces |> Seq.toArray
         member x.BaseType = x.GetTypeInfo().BaseType
+        member x.Assembly = x.GetTypeInfo().Assembly
+
+        // TODO: This is approximate - it works based on the number of arguments, not type-based overloading
+        member x.GetMethod(methName,_bindingFlags:BindingFlags,_binder:obj,argTypes:Type[],_returnType:Type) = 
+            x.GetTypeInfo().DeclaredMethods |> Seq.find (fun n -> n.Name = methName && n.GetParameters().Length = argTypes.Length)
+        // TODO: This is approximate - it works based on the number of arguments, not type-based overloading
+        member x.GetConstructor(argTypes:Type[]) = 
+            x.GetTypeInfo().DeclaredConstructors |> Seq.find (fun n -> n.GetParameters().Length = argTypes.Length)
+        // TODO: This is approximate - it works based on the number of arguments, not type-based overloading
+        member x.GetProperty(propName,retType:Type,argTypes:Type[]) = 
+            x.GetTypeInfo().DeclaredProperties |> Seq.find (fun n -> n.Name = propName && n.GetIndexParameters().Length = argTypes.Length)
+
+//    type System.Reflection.FieldInfo with 
+//        member x.IsStatic = (x.Attributes &&& FieldAttributes.Static) <> enum 0
+
+    type System.Reflection.Assembly with 
+        member x.GetTypes() = x.DefinedTypes |> Seq.map (fun x -> x.AsType()) |> Seq.toArray
 
     type System.Reflection.PropertyInfo with 
+        member x.GetGetMethod(_nonPublic:bool) = x.GetMethod
+        member x.GetSetMethod(_nonPublic:bool) = x.SetMethod
         member x.GetValue(obj,_bindingFlags,_arg3,_arg4,_arg5) = x.GetValue(obj)
 
     type System.Reflection.MethodInfo with 

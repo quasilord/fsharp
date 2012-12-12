@@ -160,8 +160,11 @@ module ExtraTopLevelOperators =
     [<CompiledName("FailWith")>]
     let failwith s = raise (Failure s)
 
+#if NET_CORE
+#else
     [<CompiledName("DefaultAsyncBuilder")>]
     let async = new Microsoft.FSharp.Control.AsyncBuilder()
+#endif
 
     [<CompiledName("ToSingle")>]
     let inline single x = float32 x

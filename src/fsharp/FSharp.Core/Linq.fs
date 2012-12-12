@@ -13,6 +13,7 @@ namespace Microsoft.FSharp.Linq
 open Microsoft.FSharp
 open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Core
+open Microsoft.FSharp.Reflection
 open Microsoft.FSharp.Core.Operators
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 
@@ -655,7 +656,11 @@ module LeafExpressionConverter =
 
         // Expr.New*
         | Patterns.NewRecord(recdTy, args) -> 
+#if NET_CORE
+            let ctorInfo = Reflection.FSharpValue.PreComputeRecordConstructorInfo(recdTy) 
+#else
             let ctorInfo = Reflection.FSharpValue.PreComputeRecordConstructorInfo(recdTy, showAll) 
+#endif
             Expression.New(ctorInfo, ConvExprsToLinq env args) |> asExpr
 
         | Patterns.NewArray(ty, args) -> 
@@ -665,14 +670,22 @@ module LeafExpressionConverter =
             Expression.New ty |> asExpr
 
         | Patterns.NewUnionCase(unionCaseInfo, args) -> 
+#if NET_CORE
+            let methInfo = Reflection.FSharpValue.PreComputeUnionConstructorInfo(unionCaseInfo)
+#else
             let methInfo = Reflection.FSharpValue.PreComputeUnionConstructorInfo(unionCaseInfo, showAll)
+#endif
             let argsR = ConvExprsToLinq env args 
             Expression.Call((null:Expression), methInfo, argsR) |> asExpr
 
 #if NO_PATTERN_MATCHING_IN_INPUT_LANGUAGE
 #else
         | Patterns.UnionCaseTest(e, unionCaseInfo) -> 
+#if NET_CORE
+            let methInfo = Reflection.FSharpValue.PreComputeUnionTagMemberInfo(unionCaseInfo.DeclaringType)
+#else
             let methInfo = Reflection.FSharpValue.PreComputeUnionTagMemberInfo(unionCaseInfo.DeclaringType, showAll)
+#endif
             let obj = ConvExprToLinqInContext env e 
             let tagE = 
                 match methInfo with 

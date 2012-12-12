@@ -82,9 +82,12 @@ module ExtraTopLevelOperators =
     [<CompiledName("CreateSet")>]
     val set : elements:seq<'T> -> Set<'T>
 
+#if NET_CORE
+#else
     /// <summary>Builds an aysnchronous workflow using computation expression syntax.</summary>
     [<CompiledName("DefaultAsyncBuilder")>]
     val async : Microsoft.FSharp.Control.AsyncBuilder  
+#endif
 
     /// <summary>Converts the argument to 32-bit float.</summary>
     /// <remarks>This is a direct conversion for all 
@@ -121,8 +124,8 @@ module ExtraTopLevelOperators =
     val array2D : rows:seq<#seq<'T>> -> 'T[,]
 
 
-    #if FX_MINIMAL_REFLECTION // not on Compact Framework 
-    #else
+#if FX_MINIMAL_REFLECTION // not on Compact Framework 
+#else
     /// <summary>Special prefix operator for splicing typed expressions into quotation holes.</summary>
     [<CompiledName("SpliceExpression")>]
     val (~%) : expression:Microsoft.FSharp.Quotations.Expr<'T> -> 'T
@@ -130,7 +133,7 @@ module ExtraTopLevelOperators =
     /// <summary>Special prefix operator for splicing untyped expressions into quotation holes.</summary>
     [<CompiledName("SpliceUntypedExpression")>]
     val (~%%) : expression:Microsoft.FSharp.Quotations.Expr -> 'T
-    #endif
+#endif
 
     /// <summary>An active pattern to force the execution of values of type <c>Lazy&lt;_&gt;</c>.</summary>
     [<CompiledName("LazyPattern")>]
