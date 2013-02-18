@@ -1,8 +1,5 @@
 <?xml version='1.0'?>
 <Wix xmlns='http://schemas.microsoft.com/wix/2006/wi' xmlns:netfx="http://schemas.microsoft.com/wix/NetFxExtension">
-  <!-- TODO GAC FSharp.Core.dll -->
-  <!-- TODO build and install policy redirect files -->
-  <!-- TODO install portable FSharp.Core.dll -->
   <Product Id='279A66FC-168E-466B-B5AE-5F1C4358283A'
            Name='F# 3.0 Tools (Open Source Edition, side-by-side install)'
            Language='1033'
